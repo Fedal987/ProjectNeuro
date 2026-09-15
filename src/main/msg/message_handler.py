@@ -6,6 +6,7 @@
 """
 
 from pathlib import Path
+from src.main.ui.i18n import tr
 
 from src.main.api.api_manager import (
     API_KEY,
@@ -26,6 +27,8 @@ from src.main.prompt.non_reasoning_prompt import create_agent as create_non_reas
 from src.main.prompt.reasoning_prompt import create_agent as create_reasoning_agent
 
 class MessageHandler:
+    REASONING_LEVELS = ("default", "minimal", "low", "medium", "high", "xhigh", "max")
+
     def __init__(self, system_prompt: str = None, reasoning_enabled: bool = REASONING_ENABLED):
         self.system_prompt = system_prompt or SYSTEM_PROMPT
         self.reasoning_enabled = reasoning_enabled
@@ -56,6 +59,18 @@ class MessageHandler:
             )
         self.history = self.agent.messages
         self.use_stream = STREAM
+
+    def set_model(self, model: str | None = None, effort: str | None = None) -> None:
+        if model is not None and (not model.strip() or any(char.isspace() for char in model)):
+            raise ValueError(tr("model_name_invalid"))
+        if effort is not None and effort not in self.REASONING_LEVELS:
+            raise ValueError(tr("model_effort_invalid", levels=", ".join(self.REASONING_LEVELS)))
+        if model is not None:
+            self.agent.model = model
+        if effort is not None:
+            self.agent.reasoning_effort = "" if effort == "default" else effort
+            self.agent.thinking = True
+            self.reasoning_enabled = True
 
     def add_user_message(self, text: str):
         self.agent.add_user_message(text)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import locale
 import os
 from pathlib import Path
 
@@ -34,10 +35,17 @@ LANGUAGE_NAMES = {
 def resolve_language(language: str | None) -> str | None:
     if not language:
         return None
-    code = language.split(":", 1)[0].split(".", 1)[0].replace("-", "_")
+    code = language.strip().split(":", 1)[0].split(".", 1)[0].split("@", 1)[0].replace("-", "_")
     lowered = code.lower()
     if lowered in LANGUAGE_ALIASES:
         return LANGUAGE_ALIASES[lowered]
+    if lowered.startswith("zh_"):
+        parts = lowered.split("_")[1:]
+        if "hant" in parts:
+            return "zh_TW"
+        if "hans" in parts:
+            return "zh_CN"
+        return "zh_TW" if any(part in {"tw", "hk", "mo"} for part in parts) else "zh_CN"
     base = lowered.split("_", 1)[0]
     return base if base in SUPPORTED_LANGUAGES else None
 
@@ -47,10 +55,35 @@ def normalize_language(language: str | None) -> str:
 
 
 def detect_language() -> str:
-    for variable in ("NEURO_LANG", "LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
-        value = os.environ.get(variable)
-        if value:
-            return normalize_language(value)
+    """Choose a supported UI language without changing the process locale."""
+    override = resolve_language(os.environ.get("NEURO_LANG"))
+    if override:
+        return override
+
+    message_locale = next(
+        (os.environ[name] for name in ("LC_ALL", "LC_MESSAGES", "LANG")
+         if os.environ.get(name)),
+        None,
+    )
+    if message_locale and message_locale.split(".", 1)[0].upper() in {"C", "POSIX"}:
+        return DEFAULT_LANGUAGE
+
+    for preference in os.environ.get("LANGUAGE", "").split(":"):
+        resolved = resolve_language(preference)
+        if resolved:
+            return resolved
+    if message_locale:
+        return normalize_language(message_locale)
+
+    # LC_MESSAGES is unavailable on some platforms (notably Windows).
+    for category in dict.fromkeys((getattr(locale, "LC_MESSAGES", locale.LC_CTYPE), locale.LC_CTYPE)):
+        try:
+            system_language, _encoding = locale.getlocale(category)
+        except (ValueError, locale.Error):
+            continue
+        resolved = resolve_language(system_language)
+        if resolved:
+            return resolved
     return DEFAULT_LANGUAGE
 
 

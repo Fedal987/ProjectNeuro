@@ -117,5 +117,14 @@
   "model_api_stream_failed": "模型 API 串流請求失敗（{error}）{detail}",
   "approval_write_file": "寫入檔案 {path}",
   "approval_modify_file": "修改檔案 {path}",
-  "approval_run_command": "執行命令：{command}"
+  "approval_run_command": "執行命令：{command}",
+  "help_model": "查看或切換目前對話的模型與思考強度（本次執行有效）",
+  "model_current": "目前模型：{model} · 思考強度：{effort}",
+  "model_usage": "用法：/model <模型名稱> [思考強度]，或 /model effort <思考強度>\n強度：default、minimal、low、medium、high、xhigh、max；是否支援取決於模型與 API。設定在本次執行的目前對話中生效，保留聊天記錄。\n/model list — 列出目前 API 的可用模型",
+  "model_name_invalid": "模型名稱不得為空或包含空白字元。",
+  "model_effort_invalid": "無效的思考強度，可選：{levels}",
+  "help_model_list": "列出目前 API 的可用模型",
+  "model_list_failed": "取得模型清單失敗：{error}",
+  "model_list_empty": "API 未傳回可用模型。",
+  "model_list_hint": "* 表示目前模型。使用 /model <模型 ID> 切換。"
 }

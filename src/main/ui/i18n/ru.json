@@ -117,5 +117,14 @@
   "model_api_stream_failed": "Сбой потокового запроса к API модели ({error}){detail}",
   "approval_write_file": "записать файл {path}",
   "approval_modify_file": "изменить файл {path}",
-  "approval_run_command": "выполнить команду: {command}"
+  "approval_run_command": "выполнить команду: {command}",
+  "help_model": "Просмотр или смена модели и уровня рассуждений текущего сеанса (на время запуска)",
+  "model_current": "Текущая модель: {model} · Уровень рассуждений: {effort}",
+  "model_usage": "Использование: /model <модель> [уровень] или /model effort <уровень>\nУровни: default, minimal, low, medium, high, xhigh, max. Поддержка зависит от модели и API. Изменения действуют в текущем сеансе до выхода; история сохраняется.\n/model list — Показать доступные модели текущего API",
+  "model_name_invalid": "Имя модели не может быть пустым или содержать пробелы.",
+  "model_effort_invalid": "Неверный уровень рассуждений. Варианты: {levels}",
+  "help_model_list": "Показать доступные модели текущего API",
+  "model_list_failed": "Не удалось получить список моделей: {error}",
+  "model_list_empty": "API не вернул доступных моделей.",
+  "model_list_hint": "* Текущая модель. Смена: /model <ID модели>."
 }

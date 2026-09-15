@@ -117,5 +117,14 @@
   "model_api_stream_failed": "Model API streaming request failed ({error}){detail}",
   "approval_write_file": "write file {path}",
   "approval_modify_file": "modify file {path}",
-  "approval_run_command": "run command: {command}"
+  "approval_run_command": "run command: {command}",
+  "help_model": "View or change the model and reasoning effort for the current session (this run)",
+  "model_current": "Current model: {model} · Reasoning effort: {effort}",
+  "model_usage": "Usage: /model <model> [effort], or /model effort <effort>\nEffort: default, minimal, low, medium, high, xhigh, max. Availability depends on the model and API. Changes apply to the current session for this run; chat history is preserved.\n/model list — List models available from the current API",
+  "model_name_invalid": "Model name must be nonempty and contain no whitespace.",
+  "model_effort_invalid": "Invalid reasoning effort. Choose: {levels}",
+  "help_model_list": "List models available from the current API",
+  "model_list_failed": "Could not list models: {error}",
+  "model_list_empty": "The API returned no available models.",
+  "model_list_hint": "* Current model. Switch with /model <model ID>."
 }

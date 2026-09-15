@@ -13,7 +13,7 @@ from openai import OpenAI
 from pathlib import Path
 
 from src.main.prompt import non_reasoning_prompt
-from src.main.api.usage_tracker import UsageTracker
+from src.main.ui.terminal_cli import UsageTracker
 from src.main.ui.i18n import tr
 
 def _load_config():
@@ -47,6 +47,12 @@ _client = OpenAI(
     base_url=BASE_URL,
     api_key=API_KEY,
 )
+
+def list_models() -> list[str]:
+    """Fetch model IDs from the configured API with a bounded request timeout."""
+    page = _client.with_options(timeout=15.0, max_retries=0).models.list()
+    return sorted({model.id for model in page.data if isinstance(model.id, str) and model.id.strip()})
+
 
 def get_completion(messages, stream=False, temperature=None):
     use_stream = stream if stream is not None else STREAM

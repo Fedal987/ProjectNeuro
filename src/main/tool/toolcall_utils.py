@@ -15,11 +15,13 @@ from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Event, Lock
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import requests
-from src.main.api.usage_tracker import UsageTracker
 from src.main.ui.i18n import tr
+
+if TYPE_CHECKING:
+    from src.main.ui.terminal_cli import UsageTracker
 
 BASE_URL = ""
 MODEL = ""

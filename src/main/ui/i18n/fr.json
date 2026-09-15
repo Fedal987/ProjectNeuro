@@ -117,5 +117,14 @@
   "model_api_stream_failed": "Échec de la requête en flux à l’API du modèle ({error}){detail}",
   "approval_write_file": "écrire le fichier {path}",
   "approval_modify_file": "modifier le fichier {path}",
-  "approval_run_command": "exécuter la commande : {command}"
+  "approval_run_command": "exécuter la commande : {command}",
+  "help_model": "Afficher ou modifier le modèle et l’effort de raisonnement de la session actuelle (exécution en cours)",
+  "model_current": "Modèle actuel : {model} · Effort de raisonnement : {effort}",
+  "model_usage": "Utilisation : /model <modèle> [effort], ou /model effort <effort>\nEffort : default, minimal, low, medium, high, xhigh, max. La prise en charge dépend du modèle et de l’API. Modifications limitées à la session actuelle pendant cette exécution ; historique conservé.\n/model list — Lister les modèles disponibles via l’API actuelle",
+  "model_name_invalid": "Le nom du modèle ne peut être vide ni contenir d’espaces.",
+  "model_effort_invalid": "Effort de raisonnement invalide. Choix : {levels}",
+  "help_model_list": "Lister les modèles disponibles via l’API actuelle",
+  "model_list_failed": "Impossible de lister les modèles : {error}",
+  "model_list_empty": "L’API n’a renvoyé aucun modèle disponible.",
+  "model_list_hint": "* Modèle actuel. Changer avec /model <ID du modèle>."
 }

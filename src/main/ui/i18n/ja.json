@@ -117,5 +117,14 @@
   "model_api_stream_failed": "モデル API のストリーミングリクエストに失敗しました（{error}）{detail}",
   "approval_write_file": "ファイル {path} に書き込む",
   "approval_modify_file": "ファイル {path} を変更する",
-  "approval_run_command": "コマンドを実行する：{command}"
+  "approval_run_command": "コマンドを実行する：{command}",
+  "help_model": "現在のセッションのモデルと思考強度を表示・変更（今回の起動中のみ）",
+  "model_current": "現在のモデル：{model} · 思考強度：{effort}",
+  "model_usage": "使い方：/model <モデル名> [強度]、または /model effort <強度>\n強度：default, minimal, low, medium, high, xhigh, max。対応状況はモデルと API によります。今回の起動中の現在のセッションに適用し、会話履歴を保持します。\n/model list — 現在の API で利用可能なモデルを一覧表示",
+  "model_name_invalid": "モデル名は空にできず、空白文字も使えません。",
+  "model_effort_invalid": "無効な思考強度です。選択肢：{levels}",
+  "help_model_list": "現在の API で利用可能なモデルを一覧表示",
+  "model_list_failed": "モデル一覧の取得に失敗しました：{error}",
+  "model_list_empty": "API が利用可能なモデルを返しませんでした。",
+  "model_list_hint": "* は現在のモデルです。/model <モデル ID> で切り替えます。"
 }

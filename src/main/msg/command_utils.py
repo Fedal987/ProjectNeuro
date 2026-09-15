@@ -4,6 +4,7 @@ from collections.abc import Callable
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
+from openai import APIError
 from src.main.msg.session_manager import SessionManager
 
 
@@ -37,6 +38,7 @@ class CommandManager:
             "/reset": self._reset,
             "/echo": self._echo,
             "/session": self._session,
+            "/model": self._model,
         }
 
     def execute(self, user_input: str) -> bool:
@@ -55,6 +57,8 @@ class CommandManager:
         rows = (
             ("/help", "help_help"),
             (self.tr("help_lang_command"), "help_lang"),
+            ("/model [model] [effort]", "help_model"),
+            ("/model list", "help_model_list"),
             ("/exit", "help_exit"),
             ("/clear", "help_clear"),
             ("/reset", "help_reset"),
@@ -109,6 +113,59 @@ class CommandManager:
         self.console.print(
             f"[green]{self.tr('language_changed', language=name, code=selected)}[/green]"
         )
+        return False
+
+    def _model(self, argument: str) -> bool:
+        handler = self.session_manager.current_handler
+        parts = argument.split()
+        if parts and parts[0].lower() == "list":
+            if len(parts) != 1:
+                self.console.print(self.tr("model_usage"), markup=False)
+                return False
+            from src.main.api.api_manager import list_models
+
+            try:
+                models = list_models()
+            except (APIError, ValueError, TypeError, AttributeError) as exc:
+                self.console.print(
+                    self.tr("model_list_failed", error=exc), style="red", markup=False,
+                )
+                return False
+            if not models:
+                self.console.print(self.tr("model_list_empty"), markup=False)
+                return False
+            self.console.print(self.tr("help_model_list"), style="bold", markup=False)
+            for model in models:
+                marker = " *" if model == handler.agent.model else ""
+                self.console.print(f"  {model}{marker}", markup=False)
+            self.console.print(self.tr("model_list_hint"), style="dim", markup=False)
+            return False
+        if parts:
+            if parts[0].lower() == "effort":
+                if len(parts) != 2:
+                    self.console.print(self.tr("model_usage"), markup=False)
+                    return False
+                model, effort = None, parts[1].lower()
+            elif len(parts) <= 2:
+                model = parts[0]
+                effort = parts[1].lower() if len(parts) == 2 else None
+            else:
+                self.console.print(self.tr("model_usage"), markup=False)
+                return False
+            try:
+                handler.set_model(model, effort)
+            except ValueError as exc:
+                self.console.print(str(exc), style="red", markup=False)
+                return False
+        effort = handler.agent.reasoning_effort or self.tr("reasoning_default")
+        if not handler.reasoning_enabled or not handler.agent.thinking:
+            effort = self.tr("reasoning_off")
+        self.console.print(
+            self.tr("model_current", model=handler.agent.model, effort=effort),
+            style="cyan", markup=False,
+        )
+        if not parts:
+            self.console.print(self.tr("model_usage"), markup=False)
         return False
 
     def _exit(self, _argument: str) -> bool:

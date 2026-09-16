@@ -469,6 +469,8 @@ class Agent:
             )
             self._set_active_response(response)
             response.raise_for_status()
+            # SSE is UTF-8; requests may default text/event-stream to Latin-1.
+            response.encoding = "utf-8"
             for raw_line in response.iter_lines(chunk_size=1, decode_unicode=True):
                 if self._cancel_event.is_set():
                     raise ConversationInterrupted

@@ -2,7 +2,6 @@
 <img align="right" width="320" src="./depends_data/readme/neuro.gif" alt="PROJECTNEURO_GIF"/>
 
 <br/>
-<br/>
 
 ![PROJECT_NEURO_SVG](./depends_data/readme/project-neuro-dark.svg)
 
@@ -138,7 +137,6 @@ P2:
 - GitHub 提供代码分发服务
 - 画师 [paccha](https://www.pixiv.net/users/96121842) 制作的Neuro-sama绘图
 - HeronStudio 开发组成员
-- OpenAI --- 开发文档设计思维
 
 ## LICENSE
 

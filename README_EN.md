@@ -2,7 +2,8 @@
 
 <br/>
 
-![PROJECT_NEURO_SVG](./depends_data/readme/project-neuro-dark.svg)
+![PROJECTNEURO_SVG_GITHUB_DARK](./depends_data/readme/project-neuro.svg#gh-dark-mode-only)
+![PROJECTNEURO_SVG_GITHUB_LIGHT](./depends_data/readme/project-neuro-dark.svg#gh-light-mode-only)  
 
 An Open-Source AI Agent Application With MCP Based On Python
 

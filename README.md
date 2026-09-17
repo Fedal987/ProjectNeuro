@@ -62,7 +62,9 @@ Step 2.1: 通过Git拉取ProjectNeuro源代码
 git clone https://github.com/Fedal987/neurocode-py.git
 ```  
 
-Step 2.2: 使用Python安装uv包管理器创建并激活虚拟环境  
+#### Step 3 --- 配置环境  
+
+Step 3.1: 使用Python安装uv包管理器创建并激活虚拟环境  
 
 ```bash
 pip install uv
@@ -71,15 +73,15 @@ uv venv
 .venv\\Scripts\\activate
 ```  
 
-Step 2.3: 安装运行环境  
+Step 3.2: 安装运行环境  
 
 ```bash
 uv pip install -r requirements.txt
 ```  
 
-Step 2.4:在`templates`目录中复制`config.toml.bak`到项目根目录并命名为`config.toml`作为配置文件  
+Step 3.3:在`templates`目录中复制`config.toml.bak`到项目根目录并命名为`config.toml`作为配置文件  
 
-Step 2.5: 填写配置文件中的内容  
+Step 3.4: 填写配置文件中的内容  
 ```toml
 [API_MANAGER]
 BASE_URL = "https://api.siliconflow.cn/v1" # 可替换为你使用的实际Provider URL
@@ -96,6 +98,14 @@ EFFORT = "" # API 支持时可填写 low/medium/high；留空兼容更多服务�
 AUTO_APPROVE = false # false 时，写文件和运行命令前要求用户确认
 COMMAND_TIMEOUT = 60 # 命令执行超时时间（秒）
 ```  
+
+#### Step 4 --- 运行
+
+```bash
+# 请确保您在ProjectNeuro的虚拟环境内
+# 如未进入虚拟环境, 请输入.venv\\Scripts\\activate
+uv run neuro.py
+```
 
 ## TODO list:
 

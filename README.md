@@ -25,6 +25,9 @@ An Open-Source AI Agent Application With MCP Based On Python
         <img src="https://img.shields.io/github/forks/Fedal987/neurocode-py.svg?style=flat&label=Forks" alt="Forks">
         <img src="https://img.shields.io/github/stars/Fedal987/neurocode-py?style=flat&label=Stars" alt="Stars">
     </p>
+    <p>
+        <a href="README.md">简体中文</a> | <a href="README_EN.md">English</a>
+    </p>
 </div>
 
 --- 
@@ -179,6 +182,11 @@ COMMAND_TIMEOUT = 60 # 命令执行超时时间（秒）
 # 如未进入虚拟环境, 请先输入source .venv\\bin\\activate.fish
 uv run neuro.py
 ```
+
+### 如果您是 **MacOS** 用户，请根据如下步骤进行
+
+> [!NOTE]  
+> MacOS部署仍然在开发计划中，暂未实装，请先使用源码部署的方式
 
 ### node.js部署:
 

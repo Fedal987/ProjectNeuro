@@ -126,6 +126,12 @@ P2:
 - 增加依赖锁定与自动发布流程
 - 补全skills_handler和plugin_handler
 
+## 鸣谢
+
+- 感谢画师 [paccha](https://www.pixiv.net/users/96121842) 制作的Neuro-sama绘图
+- HeronStudio开发组成员
+- OpenAI --- 开发文档设计思维
+
 ## LICENSE
 
 本项目采用MIT License开源，对项目的使用，开发以及二次分发请遵守MIT License的规则

@@ -4,7 +4,7 @@
 <br/>
 <br/>
 
-![PROJECT_NEURO_SVG](./depends_data/readme/project-neuro.svg)
+![PROJECT_NEURO_SVG](./depends_data/readme/project-neuro-dark.svg)
 
 An Open-Source AI Agent Application With MCP Based On Python
 

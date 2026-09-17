@@ -1,9 +1,9 @@
 [API_MANAGER]
-BASE_URL = "https://api.siliconflow.cn/v1" # 可替换为你使用的实际URL
-API_KEY = ""
-MODEL = "deepseek-ai/DeepSeek-V4-Flash" # 默认模型 可更换(dsv4真便宜吧 0.001r/K Tokens)
-TEMPREATURE = 0.7
-STREAM = true
+BASE_URL = "https://api.siliconflow.cn/v1" # 可替换为你使用的实际Provider URL
+API_KEY = "" # 在这里填写您Provider提供的API KEY
+MODEL = "deepseek-ai/DeepSeek-V4-Flash" # 当前模型
+TEMPREATURE = 0.7 # 大概率不用管
+STREAM = true # 不用管
 
 [REASONING]
 ENABLED = true # 启用推理提示词和思考展示；关闭后仍使用共享工具调用 Agent

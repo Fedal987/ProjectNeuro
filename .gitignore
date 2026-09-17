@@ -9,6 +9,7 @@ tests/
 
 # debug folder
 debug/
+论文/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

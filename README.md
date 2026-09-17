@@ -103,7 +103,7 @@ COMMAND_TIMEOUT = 60 # 命令执行超时时间（秒）
 
 ```bash
 # 请确保您在ProjectNeuro的虚拟环境内
-# 如未进入虚拟环境, 请输入.venv\\Scripts\\activate
+# 如未进入虚拟环境, 请先输入.venv\\Scripts\\activate
 uv run neuro.py
 ```
 
@@ -126,12 +126,32 @@ P2:
 - 增加依赖锁定与自动发布流程
 - 补全skills_handler和plugin_handler
 
+## 开发人员名单
+
+- [Fedal987](https://github.com/Fedal987) (项目主策划、项目文档编辑者、主要开发者)
+- [いじちにじか](https://github.com/Ij1chi-Nijika)  (主要开发者、代码审查、项目测试)
+
 ## 鸣谢
 
-- 感谢画师 [paccha](https://www.pixiv.net/users/96121842) 制作的Neuro-sama绘图
-- HeronStudio开发组成员
+- [DeepSeek](https://www.deepseek.com) deepseek-v3-0324发布提供灵感
+- [MaiBot](https://github.com/Mai-with-u/MaiBot) 提供部分思路
+- GitHub 提供代码分发服务
+- 画师 [paccha](https://www.pixiv.net/users/96121842) 制作的Neuro-sama绘图
+- HeronStudio 开发组成员
 - OpenAI --- 开发文档设计思维
 
 ## LICENSE
 
-本项目采用MIT License开源，对项目的使用，开发以及二次分发请遵守MIT License的规则
+本项目采用MIT License开源，对项目的使用，开发以及二次分发请遵守MIT License的规则 
+ 
+<br/>
+
+<p align="center">
+    <a href="https://www.heronstudio.cc/">
+        <img src="./depends_data/readme/HeronStudio.png" width="150" valign="middle">
+    <a/>
+    <br/>
+    <b>Powered By HeronStudio</b>
+    <br/>
+    <b>Contact: fedal987@fedal.icu</b>
+</p>

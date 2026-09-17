@@ -39,9 +39,10 @@ ProjectNeuro 是一个由AI虚拟主播[Neuro-sama](https://www.twitch.tv/vedal9
 ## 如何部署它?
 
 ### 源码部署:
-如果你更习惯用命令行，或者想参与开发，可以用源码部署  
 
-如果您是 Windows 用户，请根据如下步骤进行  
+如果您更习惯用命令行，或者想参与开发，可以用源码部署  
+
+### 如果您是 Windows 用户，请根据如下步骤进行  
 
 #### Step 1 --- 安装[Git](https://git-scm.com/)和[Python](https://www.python.org/)  
 
@@ -67,7 +68,7 @@ Step 3.1: 使用Python安装uv包管理器创建并激活虚拟环境
 
 ```bash
 pip install uv
-cd neurocode.py
+cd neurocode-py
 uv venv
 .venv\\Scripts\\activate
 ```  
@@ -106,6 +107,86 @@ COMMAND_TIMEOUT = 60 # 命令执行超时时间（秒）
 uv run neuro.py
 ```
 
+### 如果您是 **Linux(Arch with fish shell)** 用户，请根据如下步骤进行  
+
+#### Step 1 --- 安装[Git](https://git-scm.com/)和[Python](https://www.python.org/)  
+
+- 使用`pacman`安装`Git`和`Python`
+
+```bash
+sudo pacman -S git
+sudo pacman -S python
+```
+
+#### Step 2 --- 拉取源码  
+
+Step 2.1: 通过Git拉取ProjectNeuro源代码  
+
+```bash
+git clone https://github.com/Fedal987/neurocode-py.git
+```  
+
+#### Step 3 --- 配置环境  
+
+Step 3.1: 使用Python安装uv包管理器创建并激活虚拟环境  
+
+```bash
+sudo pacman -S uv
+cd neurocode-py
+uv venv
+source .venv\\bin\\activate.fish
+```  
+
+Step 3.2: 安装运行环境  
+
+```bash
+uv pip install -r requirements.txt
+```  
+
+Step 3.3:在`templates`目录中复制`config.toml.bak`到项目根目录并命名为`config.toml`作为配置文件  
+
+```bash
+cp templates/config.toml.bak config.toml
+```
+
+Step 3.4: 填写配置文件中的内容  
+
+```bash
+vim config.toml
+```
+
+```toml
+[API_MANAGER]
+BASE_URL = "https://api.siliconflow.cn/v1" # 可替换为你使用的实际Provider URL
+API_KEY = "" # 在这里填写您Provider提供的API KEY
+MODEL = "deepseek-ai/DeepSeek-V4-Flash" # 当前模型
+TEMPREATURE = 0.7 # 大概率不用管
+STREAM = true # 不用管
+
+[REASONING]
+ENABLED = true # 启用推理提示词和思考展示；关闭后仍使用共享工具调用 Agent
+THINKING = true # 为支持该参数的 DeepSeek/SiliconFlow 模型启用思考模式
+MAX_STEPS = 12 # 单次任务允许的最大模型执行轮数
+EFFORT = "" # API 支持时可填写 low/medium/high；留空兼容更多服务商
+AUTO_APPROVE = false # false 时，写文件和运行命令前要求用户确认
+COMMAND_TIMEOUT = 60 # 命令执行超时时间（秒）
+```  
+
+#### Step 4 --- 运行
+
+```bash
+# 请确保您在ProjectNeuro的虚拟环境内
+# 如未进入虚拟环境, 请先输入source .venv\\bin\\activate.fish
+uv run neuro.py
+```
+
+### node.js部署:
+
+如果您更习惯用较为方便的npm快速部署，则可以使用该方式
+
+> ![TIPS]  
+> npm部署仍然在开发计划中，暂未实装，请先使用源码部署的方式
+
 ## TODO list:
 
 P0:
@@ -119,11 +200,13 @@ P1:
 - 合并同步和流式Agent循环
 - 拆分终端UI和入口
 - 修复翻译问题
+- 拆分单模块功能过多问题
 
 P2:
 - 完善 `pyproject.toml` 和入口
 - 增加依赖锁定与自动发布流程
 - 补全skills_handler和plugin_handler
+- 上下文压缩
 
 ## 开发人员名单
 

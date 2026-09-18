@@ -216,6 +216,7 @@ P2:
 - 增加依赖锁定与自动发布流程
 - 补全skills_handler和plugin_handler
 - 上下文压缩
+- 绕过Anthropic Fuck Chinese
 
 ## 开发人员名单
 

@@ -12,11 +12,9 @@ import signal
 import sys
 import threading
 from collections.abc import Callable
-from dataclasses import dataclass
 from io import StringIO
 from queue import Empty, Queue
-from threading import Lock
-from typing import Any, Mapping, TextIO
+from typing import Any, TextIO
 
 from prompt_toolkit.application import Application, get_app, get_app_session
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -39,60 +37,7 @@ from rich.text import Text
 
 from src.main.ui.i18n import LANGUAGE_NAMES, get_language, set_language, tr
 from src.main.tool.toolcall_utils import get_current_path
-
-
-@dataclass(frozen=True)
-class UsageSnapshot:
-    total_tokens: int
-    cached_tokens: int
-    prompt_tokens: int
-
-    @property
-    def cache_hit_rate(self) -> float:
-        if self.prompt_tokens == 0:
-            return 0.0
-        return self.cached_tokens / self.prompt_tokens * 100
-
-
-class UsageTracker:
-    def __init__(self) -> None:
-        self._total_tokens = 0
-        self._cached_tokens = 0
-        self._prompt_tokens = 0
-        self._lock = Lock()
-
-    def record(self, usage: Mapping[str, Any] | None) -> None:
-        if not usage:
-            return
-        prompt_tokens = self._token_count(usage.get("prompt_tokens"))
-        completion_tokens = self._token_count(usage.get("completion_tokens"))
-        total_tokens = self._token_count(usage.get("total_tokens"))
-        cached_tokens = min(
-            prompt_tokens,
-            self._token_count(usage.get("prompt_cache_hit_tokens")),
-        )
-        if total_tokens == 0:
-            total_tokens = prompt_tokens + completion_tokens
-
-        with self._lock:
-            self._total_tokens += total_tokens
-            self._cached_tokens += cached_tokens
-            self._prompt_tokens += prompt_tokens
-
-    def snapshot(self) -> UsageSnapshot:
-        with self._lock:
-            return UsageSnapshot(
-                total_tokens=self._total_tokens,
-                cached_tokens=self._cached_tokens,
-                prompt_tokens=self._prompt_tokens,
-            )
-
-    @staticmethod
-    def _token_count(value: Any) -> int:
-        try:
-            return max(0, int(value or 0))
-        except (TypeError, ValueError):
-            return 0
+from src.main.api.usage import UsageSnapshot, UsageTracker
 
 
 class DoubleEscapeDetector:
@@ -641,12 +586,17 @@ LOGO = r"""
 ╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝      ╚═════╝╚══════╝╚═╝
 """
 
-def build_bottom_toolbar(handler=None) -> str:
-    from src.main.api.api_manager import MODEL, REASONING_EFFORT, REASONING_ENABLED
-
-    model = handler.agent.model if handler is not None else MODEL
-    effort = handler.agent.reasoning_effort if handler is not None else REASONING_EFFORT
-    enabled = (handler.reasoning_enabled and handler.agent.thinking) if handler is not None else REASONING_ENABLED
+def build_bottom_toolbar(handler=None, *, runtime=None) -> str:
+    if handler is not None:
+        model = handler.agent.model
+        effort = handler.agent.reasoning_effort
+        enabled = handler.reasoning_enabled and handler.agent.thinking
+    else:
+        from src.main.api.api_manager import get_runtime
+        config = (runtime if runtime is not None else get_runtime()).config
+        model = config.api.model
+        effort = config.reasoning.effort
+        enabled = config.reasoning.enabled and config.reasoning.thinking
     reasoning_effort = effort or tr("reasoning_default")
     if not enabled:
         reasoning_effort = tr("reasoning_off")
@@ -655,26 +605,27 @@ def build_bottom_toolbar(handler=None) -> str:
     )
 
 
-def render_welcome() -> None:
+def render_welcome(*, runtime=None) -> None:
     """Clear the terminal and redraw the startup panel in the active language."""
-    from src.main.api.api_manager import BASE_URL, MODEL
+    from src.main.api.api_manager import get_runtime
+    config = (runtime if runtime is not None else get_runtime()).config
 
     console.clear()
     content = (
         f"[cyan]{LOGO}[/cyan]\n\n{tr('tagline')}\n"
         f"{tr('help_hint')}\n\n\n"
-        f"{tr('base_url')}: {BASE_URL}\n"
-        f"{tr('model')}: {MODEL}\n"
+        f"{tr('base_url')}: {config.api.base_url}\n"
+        f"{tr('model')}: {config.api.model}\n"
         f"{tr('current_dir')}: {get_current_path()}\n"
     )
     console.print(Panel.fit(content, border_style="cyan"))
     console.print()
 
 
-def build_exit_message() -> str:
-    from src.main.api.api_manager import USAGE_TRACKER
+def build_exit_message(*, runtime=None) -> str:
+    from src.main.api.api_manager import get_runtime
 
-    usage = USAGE_TRACKER.snapshot()
+    usage = (runtime if runtime is not None else get_runtime()).usage_tracker.snapshot()
     return tr(
         "exit_summary",
         total_tokens=f"{usage.total_tokens:,}",
@@ -683,11 +634,27 @@ def build_exit_message() -> str:
     )
 
 
-def main():
+def main(config_path=None):
+    from src.main.api.api_manager import initialize
+    from src.main.config import load_config
+
+    try:
+        config = load_config(config_path)
+        runtime = initialize(config)
+    except (OSError, ValueError) as exc:
+        console.print(str(exc), style="red", markup=False)
+        raise SystemExit(1) from exc
+    with runtime:
+        _run_cli(runtime)
+
+
+def _run_cli(runtime):
+    from functools import partial
+    from src.main.msg.message_handler import MessageHandler
     from src.main.msg.command_utils import CommandManager
     from src.main.msg.session_manager import SessionManager
 
-    session_manager = SessionManager()
+    session_manager = SessionManager(session_factory=lambda: MessageHandler(runtime=runtime))
     command_manager = CommandManager(
         console,
         session_manager,
@@ -695,8 +662,8 @@ def main():
         language_getter=get_language,
         language_setter=set_language,
         language_names=LANGUAGE_NAMES,
-        language_changed_callback=render_welcome,
-        exit_message_getter=build_exit_message,
+        language_changed_callback=partial(render_welcome, runtime=runtime),
+        exit_message_getter=partial(build_exit_message, runtime=runtime),
     )
     keyboard_protocol = None
 
@@ -722,7 +689,7 @@ def main():
         on_screen_exit=exit_screen,
     )
     with console.capture() as welcome:
-        render_welcome()
+        render_welcome(runtime=runtime)
         for error in session_manager.load_errors:
             console.print(tr("session_save_failed", error=error), style="red", markup=False)
     conversation_input.append_output(welcome.get())
@@ -823,7 +790,7 @@ def main():
                     conversation_input.append_markdown(reply)
                     conversation_input.append_output("\n")
             except (KeyboardInterrupt, EOFError):
-                conversation_input.append_output(f"\n{build_exit_message()}\n")
+                conversation_input.append_output(f"\n{build_exit_message(runtime=runtime)}\n")
                 break
             finally:
                 conversation_input.finish_response()

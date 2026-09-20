@@ -244,3 +244,25 @@ P2:
     <br/>
     <b>Contact: fedal987@fedal.icu</b>
 </p>
+
+### 配置加载与运行时
+
+配置只在 CLI 启动时通过 `load_config()` 读取和校验；导入 API、消息处理或 UI 模块不会读取
+`config.toml` 或创建 API 客户端。默认仍优先使用项目根目录的配置，再查找当前工作目录。
+旧的 `TEMPREATURE` 字段继续支持，也可使用 `TEMPERATURE`（同时存在时优先）。
+
+在 Python 中使用时，显式创建并传入运行时：
+
+```python
+from src.main.config import load_config
+from src.main.api.api_manager import create_runtime, get_completion
+from src.main.msg.message_handler import MessageHandler
+
+with create_runtime(load_config("config.toml")) as runtime:
+    handler = MessageHandler(runtime=runtime)
+    reply = get_completion([{"role": "user", "content": "你好"}], runtime=runtime)
+```
+
+每个运行时拥有自己的配置、客户端和用量统计。需要继续使用不带 `runtime` 的函数调用时，
+先调用 `initialize(load_config())`，并在结束时关闭返回的运行时。旧的 `MODEL`、`API_KEY`
+等配置全局变量已替换为 `runtime.config.api`；没有初始化时会明确报错，不会隐式读取文件。

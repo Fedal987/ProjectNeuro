@@ -5,27 +5,25 @@
     GitHub: https://github.com/Fedal987/neuro-cli-py
 """
 
-import src.main.msg.information_handler as info
-from src.main.tool.toolcall_utils import Agent, get_current_path
+from src.main.tool.toolcall_utils import Agent
 
 
-os = info.os
-core_count = info.cpu_core_count
-cpu_usage = info.cpu_usage
-total_mem = info.total_mem
-used_mem = info.used_mem
-avaliable_mem = info.avaliable_mem
-disk = info.disk
-total_disk = info.total_disk
-used_disk = info.used_disk
-avaliable_disk = info.avaliable_disk
-local_nw = info.local_nw
+def build_prompt() -> str:
+    import src.main.msg.information_handler as info
 
-time = info.local_time()
-userip = info.ip()
-current_path = get_current_path()
+    os = info.os
+    core_count = info.cpu_core_count
+    total_mem = info.total_mem
+    used_mem = info.used_mem
+    avaliable_mem = info.avaliable_mem
+    total_disk = info.total_disk
+    used_disk = info.used_disk
+    local_nw = info.local_nw
 
-prompt_building = f"""
+    time = info.local_time()
+    userip = info.ip()
+
+    return f"""
 You are Neuro, a concise conversational assistant with access to tools.
 
 ====================
@@ -105,6 +103,7 @@ USER INFORMATION
 """
 
 
-def create_agent(system_prompt: str = prompt_building, **kwargs) -> Agent:
-    """Create the shared tool-calling agent with the non-reasoning prompt."""
-    return Agent(system_prompt=system_prompt, **kwargs)
+
+def create_agent(system_prompt: str | None = None, **kwargs) -> Agent:
+    """Create the shared agent, gathering prompt context only when requested."""
+    return Agent(system_prompt=system_prompt if system_prompt is not None else build_prompt(), **kwargs)

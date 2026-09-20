@@ -21,7 +21,7 @@ import requests
 from src.main.ui.i18n import tr
 
 if TYPE_CHECKING:
-    from src.main.ui.terminal_cli import UsageTracker
+    from src.main.api.usage import UsageTracker
 
 BASE_URL = ""
 MODEL = ""

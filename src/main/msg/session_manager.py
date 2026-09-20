@@ -499,8 +499,7 @@ class SessionManager:
             index += 1
         return f"{requested}-{index}"
 
-    @staticmethod
-    def _generate_name_with_llm(messages: list[dict[str, Any]]) -> str | None:
+    def _generate_name_with_llm(self, messages: list[dict[str, Any]]) -> str | None:
         from src.main.api.api_manager import get_completion
 
         excerpts: list[str] = []
@@ -525,6 +524,7 @@ class SessionManager:
             ],
             stream=False,
             temperature=0.2,
+            runtime=getattr(self.current_handler, "runtime", None),
         )
         if not isinstance(result, str) or result.startswith("API Error:"):
             return None

@@ -1,111 +1,108 @@
-"""
-    Neuro-cli
-    author@Fedal987
-    Powered by HeronStudio
-    GitHub: https://github.com/Fedal987/neuro-cli-py
-"""
+"""Explicit API runtime initialization; importing this module performs no I/O."""
+from dataclasses import dataclass, field
 
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
 from openai import OpenAI
-from pathlib import Path
 
-from src.main.prompt import non_reasoning_prompt
-from src.main.ui.terminal_cli import UsageTracker
-from src.main.ui.i18n import tr
+from src.main.config import AppConfig, load_config
+from src.main.api.usage import UsageTracker
 
-def _load_config():
-    config_path = Path(__file__).parents[3] / "config.toml"
-    if not config_path.exists():
-        config_path = Path.cwd() / "config.toml"
-    if not config_path.exists():
-        raise FileNotFoundError(tr("config_not_found"))
-    with open(config_path, "r", encoding="utf-8") as f:
-        return tomllib.loads(f.read())
 
-_config = _load_config()
-BASE_URL = _config["API_MANAGER"]["BASE_URL"]
-API_KEY = _config["API_MANAGER"]["API_KEY"]
-MODEL = _config["API_MANAGER"]["MODEL"]
-STREAM = _config["API_MANAGER"]["STREAM"]
-TEMPERATURE = _config["API_MANAGER"]["TEMPREATURE"]
-SYSTEM_PROMPT = non_reasoning_prompt.prompt_building
+@dataclass
+class APIRuntime:
+    config: AppConfig
+    client: OpenAI
+    usage_tracker: UsageTracker = field(default_factory=UsageTracker)
 
-_reasoning_config = _config.get("REASONING", {})
-REASONING_ENABLED = _reasoning_config.get("ENABLED", True)
-REASONING_THINKING = _reasoning_config.get("THINKING", True)
-REASONING_MAX_STEPS = _reasoning_config.get("MAX_STEPS", 12)
-REASONING_EFFORT = _reasoning_config.get("EFFORT", "")
-REASONING_AUTO_APPROVE = _reasoning_config.get("AUTO_APPROVE", False)
-REASONING_COMMAND_TIMEOUT = _reasoning_config.get("COMMAND_TIMEOUT", 60)
+    def close(self) -> None:
+        global _default_runtime
+        try:
+            self.client.close()
+        finally:
+            if _default_runtime is self:
+                _default_runtime = None
 
-USAGE_TRACKER = UsageTracker()
+    def __enter__(self):
+        return self
 
-_client = OpenAI(
-    base_url=BASE_URL,
-    api_key=API_KEY,
-)
+    def __exit__(self, *args):
+        self.close()
 
-def list_models() -> list[str]:
-    """Fetch model IDs from the configured API with a bounded request timeout."""
-    page = _client.with_options(timeout=15.0, max_retries=0).models.list()
+
+_default_runtime: APIRuntime | None = None
+
+
+def create_runtime(config: AppConfig, *, client: OpenAI | None = None,
+                   usage_tracker: UsageTracker | None = None) -> APIRuntime:
+    """Create independent dependencies without reading files or changing defaults."""
+    return APIRuntime(
+        config,
+        client if client is not None else OpenAI(base_url=config.api.base_url, api_key=config.api.api_key),
+        usage_tracker if usage_tracker is not None else UsageTracker(),
+    )
+
+
+def initialize(config: AppConfig, *, client: OpenAI | None = None) -> APIRuntime:
+    """Install an explicitly configured default for callers using module helpers."""
+    global _default_runtime
+    if _default_runtime is not None:
+        raise RuntimeError("API runtime is already initialized; close it before reinitializing")
+    _default_runtime = create_runtime(config, client=client)
+    return _default_runtime
+
+
+def get_runtime() -> APIRuntime:
+    if _default_runtime is None:
+        raise RuntimeError("API runtime is not initialized; call initialize(load_config()) or pass runtime explicitly")
+    return _default_runtime
+
+
+def list_models(*, runtime: APIRuntime | None = None) -> list[str]:
+    runtime = runtime if runtime is not None else get_runtime()
+    page = runtime.client.with_options(timeout=15.0, max_retries=0).models.list()
     return sorted({model.id for model in page.data if isinstance(model.id, str) and model.id.strip()})
 
 
-def get_completion(messages, stream=False, temperature=None):
-    use_stream = stream if stream is not None else STREAM
-    try:
-        response = _client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            stream=use_stream,
-            temperature=temperature if temperature is not None else TEMPERATURE,
-        )
-        if use_stream:
-            def generator():
-                for chunk in response:
-                    if chunk.usage is not None:
-                        USAGE_TRACKER.record(chunk.usage.model_dump())
-                    if chunk.choices and chunk.choices[0].delta.content:
-                        yield chunk.choices[0].delta.content
-            return generator()
-        else:
-            if response.usage is not None:
-                USAGE_TRACKER.record(response.usage.model_dump())
-            return response.choices[0].message.content
-    except Exception as e:
-        if use_stream:
-            # Python clears the exception variable when the except block exits.
-            error_message = f"API Error: {str(e)}"
-            def error_gen():
-                yield error_message
-            return error_gen()
-        else:
-            return f"API Error: {str(e)}"
+def _error_chunks(message):
+    yield message
 
-def get_completion_stream(messages, temperature=None):
+
+def _stream_chunks(response, runtime):
     try:
-        response = _client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            stream=True,
-            temperature=temperature if temperature is not None else TEMPERATURE,
-        )
         for chunk in response:
             if chunk.usage is not None:
-                USAGE_TRACKER.record(chunk.usage.model_dump())
+                runtime.usage_tracker.record(chunk.usage.model_dump())
             if chunk.choices and chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
-    except Exception as e:
-        yield f"API Error: {str(e)}"
+    except Exception as exc:
+        yield f"API Error: {exc}"
+    finally:
+        response.close()
+
+
+def get_completion(messages, stream=False, temperature=None, *, runtime: APIRuntime | None = None):
+    runtime = runtime if runtime is not None else get_runtime()
+    settings = runtime.config.api
+    use_stream = settings.stream if stream is None else stream
+    try:
+        response = runtime.client.chat.completions.create(
+            model=settings.model, messages=messages, stream=use_stream,
+            temperature=settings.temperature if temperature is None else temperature,
+        )
+        if use_stream:
+            return _stream_chunks(response, runtime)
+        if response.usage is not None:
+            runtime.usage_tracker.record(response.usage.model_dump())
+        return response.choices[0].message.content
+    except Exception as exc:
+        # Bind text now: Python clears exc when this exception handler exits.
+        message = f"API Error: {exc}"
+        return _error_chunks(message) if use_stream else message
+
+
+def get_completion_stream(messages, temperature=None, *, runtime: APIRuntime | None = None):
+    yield from get_completion(messages, stream=True, temperature=temperature, runtime=runtime)
+
 
 if __name__ == "__main__":
-    print("System Prompt:", SYSTEM_PROMPT)
-    test_messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": "你好，可以给我做个自我介绍吗?"}
-    ]
-    reply = get_completion(test_messages)
-    print(reply)
+    with initialize(load_config()) as runtime:
+        print(get_completion([{"role": "user", "content": "你好，可以给我做个自我介绍吗?"}], runtime=runtime))

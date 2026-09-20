@@ -8,57 +8,39 @@
 from pathlib import Path
 from src.main.ui.i18n import tr
 
-from src.main.api.api_manager import (
-    API_KEY,
-    BASE_URL,
-    MODEL,
-    REASONING_AUTO_APPROVE,
-    REASONING_COMMAND_TIMEOUT,
-    REASONING_EFFORT,
-    REASONING_ENABLED,
-    REASONING_MAX_STEPS,
-    REASONING_THINKING,
-    STREAM,
-    SYSTEM_PROMPT,
-    TEMPERATURE,
-    USAGE_TRACKER,
-)
-from src.main.prompt.non_reasoning_prompt import create_agent as create_non_reasoning_agent
-from src.main.prompt.reasoning_prompt import create_agent as create_reasoning_agent
+from src.main.api.api_manager import APIRuntime, get_runtime
+from src.main.prompt.non_reasoning_prompt import build_prompt, create_agent as create_non_reasoning_agent
+from src.main.prompt.reasoning_prompt import SYSTEM_PROMPT as REASONING_PROMPT, create_agent as create_reasoning_agent
 
 class MessageHandler:
     REASONING_LEVELS = ("default", "minimal", "low", "medium", "high", "xhigh", "max")
 
-    def __init__(self, system_prompt: str = None, reasoning_enabled: bool = REASONING_ENABLED):
-        self.system_prompt = system_prompt or SYSTEM_PROMPT
-        self.reasoning_enabled = reasoning_enabled
-        agent_factory = (
-            create_reasoning_agent
-            if self.reasoning_enabled
-            else create_non_reasoning_agent
+    def __init__(self, system_prompt: str | None = None, reasoning_enabled: bool | None = None,
+                 *, runtime: APIRuntime | None = None):
+        self.runtime = runtime if runtime is not None else get_runtime()
+        api = self.runtime.config.api
+        reasoning = self.runtime.config.reasoning
+        self.reasoning_enabled = reasoning.enabled if reasoning_enabled is None else reasoning_enabled
+        self.system_prompt = system_prompt if system_prompt is not None else (
+            REASONING_PROMPT if self.reasoning_enabled else build_prompt()
         )
-        agent_options = dict(
-            api_key=API_KEY,
+        agent_factory = create_reasoning_agent if self.reasoning_enabled else create_non_reasoning_agent
+        self.agent = agent_factory(
+            system_prompt=self.system_prompt,
+            api_key=api.api_key,
             workspace=Path.cwd(),
-            model=MODEL,
-            base_url=BASE_URL,
-            thinking=REASONING_THINKING if self.reasoning_enabled else False,
-            reasoning_effort=REASONING_EFFORT if self.reasoning_enabled else "",
-            auto_approve=REASONING_AUTO_APPROVE,
-            max_steps=REASONING_MAX_STEPS,
-            temperature=TEMPERATURE,
-            command_timeout=REASONING_COMMAND_TIMEOUT,
-            usage_tracker=USAGE_TRACKER,
+            model=api.model,
+            base_url=api.base_url,
+            thinking=reasoning.thinking if self.reasoning_enabled else False,
+            reasoning_effort=reasoning.effort if self.reasoning_enabled else "",
+            auto_approve=reasoning.auto_approve,
+            max_steps=reasoning.max_steps,
+            temperature=api.temperature,
+            command_timeout=reasoning.command_timeout,
+            usage_tracker=self.runtime.usage_tracker,
         )
-        if self.reasoning_enabled:
-            self.agent = agent_factory(**agent_options)
-        else:
-            self.agent = agent_factory(
-                system_prompt=self.system_prompt,
-                **agent_options,
-            )
         self.history = self.agent.messages
-        self.use_stream = STREAM
+        self.use_stream = api.stream
 
     def set_model(self, model: str | None = None, effort: str | None = None) -> None:
         if model is not None and (not model.strip() or any(char.isspace() for char in model)):

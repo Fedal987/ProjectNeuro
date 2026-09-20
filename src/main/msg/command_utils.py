@@ -125,7 +125,7 @@ class CommandManager:
             from src.main.api.api_manager import list_models
 
             try:
-                models = list_models()
+                models = list_models(runtime=handler.runtime)
             except (APIError, ValueError, TypeError, AttributeError) as exc:
                 self.console.print(
                     self.tr("model_list_failed", error=exc), style="red", markup=False,

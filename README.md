@@ -63,7 +63,7 @@ ProjectNeuro 是一个由AI虚拟主播[Neuro-sama](https://www.twitch.tv/vedal9
 Step 2.1: 通过Git拉取ProjectNeuro源代码  
 
 ```bash
-git clone https://github.com/Fedal987/neurocode-py.git
+git clone https://github.com/Fedal987/ProjectNeuro.git
 ```  
 
 #### Step 3 --- 配置环境  
@@ -72,7 +72,7 @@ Step 3.1: 使用Python安装uv包管理器创建并激活虚拟环境
 
 ```bash
 pip install uv
-cd neurocode-py
+cd ProjectNeuro
 uv venv
 .venv\\Scripts\\activate
 ```  
@@ -127,7 +127,7 @@ sudo pacman -S python
 Step 2.1: 通过Git拉取ProjectNeuro源代码  
 
 ```bash
-git clone https://github.com/Fedal987/neurocode-py.git
+git clone https://github.com/Fedal987/ProjectNeuro.git
 ```  
 
 #### Step 3 --- 配置环境  

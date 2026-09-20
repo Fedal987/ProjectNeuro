@@ -77,6 +77,7 @@ class Agent:
         self.command_timeout = max(1, int(command_timeout))
         self.confirm = confirm or self._terminal_confirm
         self.usage_tracker = usage_tracker
+        self.event_sink: Callable[[str, dict[str, Any]], None] | None = None
         self._read_paths: set[Path] = set()
         self._last_failed_call: str | None = None
         self._cancel_event = Event()
@@ -208,8 +209,17 @@ class Agent:
         self._read_paths.clear()
         self._last_failed_call = None
 
+    def _emit_event(self, kind: str, payload: dict[str, Any]) -> None:
+        if self.event_sink is not None:
+            self.event_sink(kind, payload)
+
+    def _append_message(self, message: dict[str, Any]) -> None:
+        kind = {"user": "user_message", "assistant": "assistant_message", "tool": "tool_result", "system": "system_message"}[message["role"]]
+        self._emit_event(kind, {"message": message})
+        self.messages.append(message)
+
     def add_user_message(self, text: str) -> None:
-        self.messages.append({"role": "user", "content": text})
+        self._append_message({"role": "user", "content": text})
 
     def queue_user_message(self, text: str) -> None:
         text = text.strip()
@@ -254,14 +264,15 @@ class Agent:
             tool_calls = message.get("tool_calls") or []
             if tool_calls:
                 assistant_message["tool_calls"] = tool_calls
-            self.messages.append(assistant_message)
+            self._append_message(assistant_message)
 
             if tool_calls:
                 for tool_call in tool_calls:
                     if self._cancel_event.is_set():
                         return tr("conversation_interrupted")
+                    self._emit_event("tool_call", {"tool_call_id": tool_call.get("id"), "call": tool_call})
                     result = self._execute_tool_call(tool_call)
-                    self.messages.append(
+                    self._append_message(
                         {
                             "role": "tool",
                             "tool_call_id": tool_call.get("id", "unknown"),
@@ -282,7 +293,7 @@ class Agent:
             f"已达到最大执行步数 {self.max_steps}。请总结已完成的工作、验证结果和仍未解决的问题，"
             "不要继续调用工具。"
         )
-        self.messages.append({"role": "user", "content": limit_message})
+        self._append_message({"role": "user", "content": limit_message})
         try:
             message = self._request_completion(use_tools=False)
         except ConversationInterrupted:
@@ -291,7 +302,7 @@ class Agent:
         except ToolError as exc:
             return self._record_error(tr("agent_api_error", error=exc))
         content = message.get("content") or limit_message
-        self.messages.append({"role": "assistant", "content": content})
+        self._append_message({"role": "assistant", "content": content})
         return content
 
     def run_stream(self, user_input: str | None = None):
@@ -360,7 +371,7 @@ class Agent:
             tool_calls = [tool_call_parts[index] for index in sorted(tool_call_parts)]
             if tool_calls:
                 assistant_message["tool_calls"] = tool_calls
-            self.messages.append(assistant_message)
+            self._append_message(assistant_message)
 
             if tool_calls:
                 for tool_call in tool_calls:
@@ -369,8 +380,9 @@ class Agent:
                         return
                     description = self._describe_tool_call(tool_call)
                     yield StreamEvent("tool", description)
+                    self._emit_event("tool_call", {"tool_call_id": tool_call.get("id"), "call": tool_call})
                     result = self._execute_tool_call(tool_call)
-                    self.messages.append(
+                    self._append_message(
                         {
                             "role": "tool",
                             "tool_call_id": tool_call.get("id", "unknown"),
@@ -393,7 +405,7 @@ class Agent:
             f"已达到最大执行步数 {self.max_steps}。请总结已完成的工作、验证结果和仍未解决的问题，"
             "不要继续调用工具。"
         )
-        self.messages.append({"role": "user", "content": limit_message})
+        self._append_message({"role": "user", "content": limit_message})
         try:
             content_parts = []
             for chunk in self._request_completion_stream(use_tools=False):
@@ -416,7 +428,7 @@ class Agent:
             )
             return
         content = "".join(content_parts) or limit_message
-        self.messages.append({"role": "assistant", "content": content})
+        self._append_message({"role": "assistant", "content": content})
 
     def _request_completion(self, use_tools: bool = True) -> dict[str, Any]:
         if self._cancel_event.is_set():
@@ -530,6 +542,8 @@ class Agent:
         return payload
 
     def _record_usage(self, usage: Any) -> None:
+        if isinstance(usage, dict):
+            self._emit_event("token_usage", usage)
         if self.usage_tracker is not None and isinstance(usage, dict):
             self.usage_tracker.record(usage)
 
@@ -637,7 +651,7 @@ class Agent:
         return f"{description}: {detail}" if detail else description
 
     def _record_error(self, content: str) -> str:
-        self.messages.append({"role": "assistant", "content": content})
+        self._append_message({"role": "assistant", "content": content})
         return content
 
     def _resolve_path(self, path: str) -> Path:

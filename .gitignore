@@ -3,13 +3,17 @@
 
 # history
 .neuro_cli_history
-session/
+/session/
 
-tests/
+/tests/*
+!/tests/test_session_store.py
+!/tests/test_session_manager.py
+!/tests/test_session_events.py
 
 # debug folder
 debug/
 论文/
+docs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

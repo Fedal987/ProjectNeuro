@@ -7,35 +7,41 @@
 
 from __future__ import annotations
 
-import json
+import copy
+from uuid import uuid4
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from urllib.parse import quote
 
 from prompt_toolkit.history import History
 from src.main.ui.i18n import tr
+from src.main.session import LocalSessionStore, SessionStore, SessionEvent
+from src.main.session.migration import import_legacy
 
 if TYPE_CHECKING:
     from src.main.msg.message_handler import MessageHandler
 
 
-SESSION_FORMAT_VERSION = 1
-
-
 @dataclass
 class Session:
     name: str
-    handler: MessageHandler
+    handler: MessageHandler | None
     workspace: Path = field(default_factory=lambda: Path.cwd().resolve())
     input_history: list[str] = field(default_factory=list)
     auto_name_pending: bool = False
     temporary: bool = False
     created_at: datetime = field(default_factory=datetime.now)
     last_used_at: datetime = field(default_factory=datetime.now)
+    session_id: str = field(default_factory=lambda: str(uuid4()))
+    persisted_messages: list[dict[str, Any]] = field(default_factory=list, repr=False)
+    persisted_inputs: int = 0
+    persisted_metadata: dict[str, Any] = field(default_factory=dict, repr=False)
+    persisted: bool = False
+    checkpoint_seq: int = 0
+    persisted_seq: int = 0
 
 
 class SessionPromptHistory(History):
@@ -69,6 +75,7 @@ class SessionManager:
         workspace_provider: Callable[[], Path] = Path.cwd,
         storage_root: str | Path | None = None,
         name_generator: Callable[[list[dict[str, Any]]], str | None] | None = None,
+        store: SessionStore | None = None,
     ) -> None:
         if session_factory is None:
             from src.main.msg.message_handler import MessageHandler
@@ -84,6 +91,10 @@ class SessionManager:
         self.prompt_history = SessionPromptHistory(self)
         self.load_errors: list[str] = []
         self.naming_errors: list[str] = []
+        self.store = store if store is not None else LocalSessionStore(self.session_directory)
+        if store is None:
+            self.load_errors.extend(import_legacy(self.store, self.session_directory))
+            self.load_errors.extend(self.store.errors)
         self._load_sessions()
         self._create_temporary_session()
 
@@ -99,7 +110,9 @@ class SessionManager:
     def current_session(self) -> Session:
         if self._current_name is None:
             raise RuntimeError(tr("session_none_available"))
-        return self._sessions[self._current_name]
+        session = self._sessions[self._current_name]
+        self._ensure_handler(session)
+        return session
 
     @property
     def current_handler(self) -> MessageHandler:
@@ -114,7 +127,7 @@ class SessionManager:
         workspace: str | Path | None = None,
     ) -> tuple[Session, ...]:
         sessions = tuple(
-            sorted(self._sessions.values(), key=lambda item: item.created_at)
+            sorted(self._sessions.values(), key=lambda item: item.created_at.timestamp())
         )
         if workspace is None:
             return sessions
@@ -195,7 +208,10 @@ class SessionManager:
             and self.current_name != name
         ):
             self._discard_current_temporary()
+        if self.has_current_session:
+            self.save_current_session()
         selected = self._sessions[name]
+        self._ensure_handler(selected)
         selected.last_used_at = datetime.now()
         self._current_name = name
         self.prompt_history.select_current_session()
@@ -234,6 +250,11 @@ class SessionManager:
         if not self.has_current_session:
             return
         self.current_handler.reset()
+        session = self.current_session
+        if session.persisted:
+            self._emit(session, "context_reset", self._snapshot(session))
+            session.persisted_messages = copy.deepcopy(session.handler.history)
+            session.persisted_inputs = len(session.input_history)
         self.current_session.last_used_at = datetime.now()
         self.save_current_session()
 
@@ -263,12 +284,6 @@ class SessionManager:
         self._rename_session(old_name, unique_title)
         session.auto_name_pending = False
         self.save_session(session)
-        old_path = self._session_path(old_name)
-        if old_path != self._session_path(unique_title) and old_path.exists():
-            try:
-                old_path.unlink()
-            except OSError as exc:
-                self.naming_errors.append(str(exc))
         return unique_title
 
     def save_current_session(self) -> None:
@@ -282,73 +297,148 @@ class SessionManager:
         for session in self._sessions.values():
             self.save_session(session)
 
-    def save_session(self, session: Session) -> None:
-        if session.temporary:
-            return
-        self.session_directory.mkdir(parents=True, exist_ok=True)
-        target = self._session_path(session.name)
-        temporary = target.with_suffix(".session.tmp")
-        payload = {
-            "version": SESSION_FORMAT_VERSION,
-            "name": session.name,
-            "workspace": str(session.workspace),
-            "created_at": session.created_at.isoformat(),
-            "last_used_at": session.last_used_at.isoformat(),
-            "messages": session.handler.history,
-            "input_history": session.input_history,
+    def _metadata(self, session):
+        agent = getattr(session.handler, "agent", None)
+        return {
+            "title": session.name,
+            "model": getattr(agent, "model", None),
+            "reasoning_effort": getattr(agent, "reasoning_effort", None),
+            "thinking": getattr(agent, "thinking", None),
+            "reasoning_enabled": getattr(session.handler, "reasoning_enabled", None),
             "auto_name_pending": session.auto_name_pending,
         }
-        temporary.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            encoding="utf-8",
+
+    def _snapshot(self, session):
+        return dict(
+            messages=copy.deepcopy(session.handler.history),
+            input_history=list(session.input_history),
+            auto_name_pending=session.auto_name_pending,
+            reasoning_effort=self._metadata(session)["reasoning_effort"],
+            thinking=self._metadata(session)["thinking"],
+            reasoning_enabled=self._metadata(session)["reasoning_enabled"],
         )
-        temporary.replace(target)
+
+    def _emit(self, session, kind, payload):
+        result = self.store.append_event(SessionEvent(
+            session.session_id, kind, copy.deepcopy(payload), seq=session.persisted_seq + 1,
+        ))
+        session.persisted_seq = result.event.seq
+        return result
+
+    def _bind_events(self, session):
+        agent = getattr(session.handler, "agent", None)
+        if agent is None:
+            return
+
+        def persist(kind, payload):
+            self._emit(session, kind, payload)
+            if "message" in payload:
+                session.persisted_messages.append(copy.deepcopy(payload["message"]))
+        agent.event_sink = persist
+
+    def _ensure_handler(self, session):
+        if session.handler is not None:
+            return
+        state = self.store.resume_session(session.session_id)
+        pending = set()
+        for message in state.messages:
+            if message.get("role") == "assistant":
+                pending.update(call["id"] for call in message.get("tool_calls", []))
+            elif message.get("role") == "tool":
+                pending.discard(message.get("tool_call_id"))
+        if pending:
+            raise ValueError("Session contains unfinished tool calls; inspect the rollout or fork an earlier completed event")
+        session.handler = self._session_factory()
+        session.handler.history[:] = state.messages
+        session.input_history = state.input_history
+        session.auto_name_pending = state.auto_name_pending
+        agent = getattr(session.handler, "agent", None)
+        if agent is not None:
+            agent.workspace = session.workspace
+            if state.metadata.model:
+                agent.model = state.metadata.model
+            if state.reasoning_effort is not None:
+                agent.reasoning_effort = state.reasoning_effort
+            if state.thinking is not None:
+                agent.thinking = state.thinking
+            if state.reasoning_enabled is not None:
+                session.handler.reasoning_enabled = state.reasoning_enabled
+        session.persisted_messages = copy.deepcopy(state.messages)
+        session.persisted_inputs = len(state.input_history)
+        session.checkpoint_seq = state.checkpoint_seq
+        session.persisted_seq = state.metadata.last_seq
+        session.persisted_metadata = self._metadata(session)
+        self._bind_events(session)
+
+    def save_session(self, session: Session) -> None:
+        if session.temporary or session.handler is None:
+            return
+        metadata = self._metadata(session)
+        if not session.persisted:
+            created = self.store.create_session(
+                session_id=session.session_id, workspace=str(session.workspace),
+                title=session.name, model=metadata["model"],
+                created_at=session.created_at.isoformat(), **self._snapshot(session),
+            )
+            session.persisted = True
+            session.checkpoint_seq = 1
+            session.persisted_seq = created.last_seq
+            session.persisted_messages = copy.deepcopy(session.handler.history)
+            session.persisted_inputs = len(session.input_history)
+            session.persisted_metadata = metadata
+            self._bind_events(session)
+            return
+        if metadata != session.persisted_metadata:
+            self._emit(session, "session_metadata_updated", metadata)
+            session.persisted_metadata = metadata
+        history = session.handler.history
+        count = len(session.persisted_messages)
+        if history[:count] != session.persisted_messages:
+            # Reset or a caller replacing context creates a new recovery boundary.
+            self._emit(session, "context_reset", self._snapshot(session))
+            session.persisted_messages = copy.deepcopy(history)
+            session.persisted_inputs = len(session.input_history)
+        else:
+            for message in history[count:]:
+                kind = {"user": "user_message", "assistant": "assistant_message", "tool": "tool_result", "system": "system_message"}[message["role"]]
+                self._emit(session, kind, {"message": message})
+                session.persisted_messages.append(copy.deepcopy(message))
+        for text in session.input_history[session.persisted_inputs:]:
+            self._emit(session, "input_submitted", {"text": text})
+            session.persisted_inputs += 1
+        current = self.store.get_session(session.session_id)
+        if current.last_seq - session.checkpoint_seq >= 100:
+            self._emit(session, "checkpoint", self._snapshot(session))
+            session.checkpoint_seq = current.last_seq + 1
+
+    def checkpoint_current_session(self):
+        self.save_current_session()
+        session = self.current_session
+        if session.persisted:
+            result = self._emit(session, "checkpoint", self._snapshot(session))
+            session.checkpoint_seq = result.event.seq
+
+    def close(self):
+        try:
+            self.save_all()
+            for session in self._sessions.values():
+                if session.persisted and session.handler is not None:
+                    self._emit(session, "session_end", {"reason": "runtime_closed"})
+        finally:
+            close = getattr(self.store, "close", None)
+            if close:
+                close()
 
     def _load_sessions(self) -> None:
-        if not self.session_directory.is_dir():
-            return
-        for session_path in sorted(self.session_directory.glob("*.session")):
-            try:
-                data = json.loads(session_path.read_text(encoding="utf-8"))
-                session = self._session_from_data(data)
-                if session.name in self._sessions:
-                    raise ValueError(tr("session_duplicate_name", name=session.name))
-                self._sessions[session.name] = session
-            except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
-                self.load_errors.append(f"{session_path.name}: {exc}")
-
-    def _session_from_data(self, data: Any) -> Session:
-        if not isinstance(data, dict):
-            raise ValueError(tr("session_json_object_required"))
-        name = self._normalise_name(data.get("name", ""))
-        messages = data.get("messages", [])
-        input_history = data.get("input_history", [])
-        if not isinstance(messages, list) or not all(
-            isinstance(message, dict) for message in messages
-        ):
-            raise ValueError(tr("session_messages_invalid"))
-        if not isinstance(input_history, list) or not all(
-            isinstance(item, str) for item in input_history
-        ):
-            raise ValueError(tr("session_history_invalid"))
-        handler = self._session_factory()
-        if messages:
-            handler.history[:] = messages
-        return Session(
-            name=name,
-            handler=handler,
-            workspace=Path(data.get("workspace") or self.storage_root).resolve(),
-            input_history=list(input_history),
-            auto_name_pending=bool(
-                data.get(
-                    "auto_name_pending",
-                    name == "default" or bool(re.fullmatch(r"session-\d+", name)),
-                )
-            ),
-            temporary=False,
-            created_at=self._parse_datetime(data.get("created_at")),
-            last_used_at=self._parse_datetime(data.get("last_used_at")),
-        )
+        for item in self.store.list_sessions(limit=None):
+            # Titles remain compatible with name-based CLI selection.
+            name = self._unique_name(item.title)
+            self._sessions[name] = Session(
+                name=name, handler=None, session_id=item.session_id,
+                workspace=Path(item.workspace), persisted=True,
+                created_at=self._parse_datetime(item.created_at),
+                last_used_at=self._parse_datetime(item.updated_at),
+            )
 
     def _resolve_target(
         self,
@@ -369,9 +459,6 @@ class SessionManager:
                 raise KeyError(tr("session_not_found", name=name))
             return name
         raise TypeError(tr("session_selection_type"))
-
-    def _session_path(self, name: str) -> Path:
-        return self.session_directory / f"{quote(name, safe='')}.session"
 
     def _create_temporary_session(self) -> Session:
         name = None if self._sessions else self._default_name

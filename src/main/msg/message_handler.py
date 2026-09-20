@@ -76,7 +76,7 @@ class MessageHandler:
         self.agent.add_user_message(text)
 
     def add_assistant_message(self, text: str):
-        self.history.append({"role": "assistant", "content": text})
+        self.agent._append_message({"role": "assistant", "content": text})
 
     def get_response(self, user_input: str = None) -> str:
         return self.agent.run(user_input)

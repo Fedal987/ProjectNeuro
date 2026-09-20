@@ -723,6 +723,8 @@ def main():
     )
     with console.capture() as welcome:
         render_welcome()
+        for error in session_manager.load_errors:
+            console.print(tr("session_save_failed", error=error), style="red", markup=False)
     conversation_input.append_output(welcome.get())
     try:
         while True:
@@ -835,6 +837,12 @@ def main():
                     )
     finally:
         conversation_input.stop()
+        try:
+            session_manager.close()
+        except (OSError, TypeError, ValueError) as exc:
+            conversation_input.append_output(
+                f"\n{tr('session_save_failed', error=exc)}\n", "class:error"
+            )
     conversation_input.render_transcript(console)
 
 

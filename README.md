@@ -199,8 +199,6 @@ uv run neuro.py
 ## TODO list:
 
 P0:
-- 修复流式异常生成器的 `NameError`
-- 更新README
 - 将配置读取移出import阶段
 
 P1:

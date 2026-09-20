@@ -20,11 +20,11 @@ An Open-Source AI Agent Application With MCP Based On Python
 <div align="center">
     <p>
         <img src="https://img.shields.io/badge/Python-3.10+-blue" alt="Python Version">
-        <img src="https://img.shields.io/github/license/Fedal987/neurocode-py?label=License" alt="License">
+        <img src="https://img.shields.io/github/license/Fedal987/ProjectNeuro?label=License" alt="License">
         <img src="https://img.shields.io/badge/Status-In%20Development-yellow" alt="Status">
-        <img src="https://img.shields.io/github/contributors/Fedal987/neurocode-py.svg?style=flat&label=Contributors" alt="Contributors">
-        <img src="https://img.shields.io/github/forks/Fedal987/neurocode-py.svg?style=flat&label=Forks" alt="Forks">
-        <img src="https://img.shields.io/github/stars/Fedal987/neurocode-py?style=flat&label=Stars" alt="Stars">
+        <img src="https://img.shields.io/github/contributors/Fedal987/ProjectNeuro.svg?style=flat&label=Contributors" alt="Contributors">
+        <img src="https://img.shields.io/github/forks/Fedal987/ProjectNeuro.svg?style=flat&label=Forks" alt="Forks">
+        <img src="https://img.shields.io/github/stars/Fedal987/ProjectNeuro?style=flat&label=Stars" alt="Stars">
     </p>
     <p>
         <a href="README.md">简体中文</a> | <a href="README_EN.md">English</a>

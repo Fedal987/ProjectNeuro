@@ -77,8 +77,10 @@ def get_completion(messages, stream=False, temperature=None):
             return response.choices[0].message.content
     except Exception as e:
         if use_stream:
+            # Python clears the exception variable when the except block exits.
+            error_message = f"API Error: {str(e)}"
             def error_gen():
-                yield f"API Error: {str(e)}"
+                yield error_message
             return error_gen()
         else:
             return f"API Error: {str(e)}"

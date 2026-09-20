@@ -5,10 +5,8 @@
 .neuro_cli_history
 /session/
 
-/tests/*
-!/tests/test_session_store.py
-!/tests/test_session_manager.py
-!/tests/test_session_events.py
+tests/
+
 
 # debug folder
 debug/

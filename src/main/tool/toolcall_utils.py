@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import locale
 import os
 import shlex
 import subprocess
@@ -734,17 +735,18 @@ class Agent:
                 command,
                 cwd=self.workspace,
                 capture_output=True,
-                text=True,
                 timeout=self.command_timeout,
                 check=False,
             )
         except FileNotFoundError:
             return self._search_files_python(query, target)
+        stdout = self._decode_subprocess_output(completed.stdout)
+        stderr = self._decode_subprocess_output(completed.stderr)
         if completed.returncode == 1:
             return "未找到匹配内容。"
         if completed.returncode != 0:
-            raise ToolError(completed.stderr.strip() or f"rg 退出码 {completed.returncode}")
-        return self._truncate(completed.stdout)
+            raise ToolError(stderr.strip() or f"rg 退出码 {completed.returncode}")
+        return self._truncate(stdout)
 
     def _search_files_python(self, query: str, target: Path) -> str:
         files = [target] if target.is_file() else target.rglob("*")
@@ -814,7 +816,6 @@ class Agent:
                 arguments,
                 cwd=self.workspace,
                 capture_output=True,
-                text=True,
                 timeout=self.command_timeout,
                 check=False,
             )
@@ -822,9 +823,12 @@ class Agent:
             raise ToolError(f"找不到命令: {arguments[0]}") from exc
         except subprocess.TimeoutExpired as exc:
             raise ToolError(f"命令执行超过 {self.command_timeout} 秒") from exc
-        output = completed.stdout
-        if completed.stderr:
-            output += ("\n" if output else "") + completed.stderr
+        # Decode captured bytes ourselves. On Windows, text=True uses the local
+        # code page (often GBK), while tools such as curl commonly emit UTF-8.
+        output = self._decode_subprocess_output(completed.stdout)
+        stderr = self._decode_subprocess_output(completed.stderr)
+        if stderr:
+            output += ("\n" if output else "") + stderr
         result = f"退出码: {completed.returncode}\n{output.strip()}"
         if completed.returncode != 0:
             raise ToolError(self._truncate(result))
@@ -928,6 +932,21 @@ class Agent:
             self.auto_approve = True
             return True
         return answer in {"y", "yes", "是", "はい", "oui", "ja", "sim", "да"}
+
+    @staticmethod
+    def _decode_subprocess_output(output: bytes | str | None) -> str:
+        if output is None:
+            return ""
+        if isinstance(output, str):
+            return output
+        try:
+            return output.decode("utf-8")
+        except UnicodeDecodeError:
+            encoding = locale.getpreferredencoding(False) or "utf-8"
+            try:
+                return output.decode(encoding)
+            except (LookupError, UnicodeDecodeError):
+                return output.decode("utf-8", errors="replace")
 
     @staticmethod
     def _truncate(text: str, limit: int = 20000) -> str:

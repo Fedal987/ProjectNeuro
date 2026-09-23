@@ -6,6 +6,7 @@ from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 from src.main.encoding import read_text_file
+from src.main.model_config import ModelOptions, parse_model_options
 
 try:
     import tomllib
@@ -20,6 +21,10 @@ class APIConfig:
     model: str
     stream: bool = True
     temperature: float = 0.2
+    protocol: str = "openai_compatible"
+    provider: str = "auto"
+    defaults: ModelOptions = field(default_factory=ModelOptions)
+    models: dict[str, ModelOptions] = field(default_factory=dict)
 
     def __post_init__(self):
         for name in ("base_url", "api_key", "model"):
@@ -33,6 +38,18 @@ class APIConfig:
             raise ValueError("API_MANAGER.STREAM must be a boolean")
         if type(self.temperature) not in (int, float) or not isfinite(self.temperature) or self.temperature < 0:
             raise ValueError("API_MANAGER.TEMPERATURE must be a finite non-negative number")
+        for name in ("protocol", "provider"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value.strip() or value != value.strip():
+                raise ValueError(f"API_MANAGER.{name.upper()} must be a non-empty identifier")
+        if not isinstance(self.defaults, ModelOptions):
+            raise ValueError("API_MANAGER.DEFAULTS must contain model options")
+        if not isinstance(self.models, dict) or any(
+            not isinstance(name, str) or not name.strip() or any(char.isspace() for char in name)
+            or not isinstance(options, ModelOptions)
+            for name, options in self.models.items()
+        ):
+            raise ValueError("API_MANAGER.MODELS must map model identifiers to model options")
 
 
 @dataclass(frozen=True)
@@ -76,6 +93,10 @@ class AppConfig:
                 stream=api.get("STREAM", True),
                 # Preserve the spelling used by existing config.toml files.
                 temperature=api.get("TEMPERATURE", api.get("TEMPREATURE", 0.2)),
+                protocol=api.get("PROTOCOL", "openai_compatible"),
+                provider=api.get("PROVIDER", "auto"),
+                defaults=ModelOptions.from_mapping(api.get("DEFAULTS", {})),
+                models=parse_model_options(api.get("MODELS", {})),
             ),
             reasoning=ReasoningConfig(
                 enabled=reasoning.get("ENABLED", True), thinking=reasoning.get("THINKING", True),

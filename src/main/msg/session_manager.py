@@ -501,6 +501,7 @@ class SessionManager:
 
     def _generate_name_with_llm(self, messages: list[dict[str, Any]]) -> str | None:
         from src.main.api.api_manager import get_completion
+        from src.main.api.exceptions import ProviderError
 
         excerpts: list[str] = []
         for message in messages:
@@ -511,22 +512,25 @@ class SessionManager:
             label = "用户" if role == "user" else "助手"
             excerpts.append(f"{label}: {content}")
         conversation = "\n".join(excerpts)[:6000]
-        result = get_completion(
-            [
-                {
-                    "role": "system",
-                    "content": (
-                        "你是会话标题生成器。根据对话生成一个准确、简短的中文标题，"
-                        "建议 2 到 12 个汉字。只输出标题，不要引号、标点、解释或前缀。"
-                    ),
-                },
-                {"role": "user", "content": conversation},
-            ],
-            stream=False,
-            temperature=0.2,
-            runtime=getattr(self.current_handler, "runtime", None),
-        )
-        if not isinstance(result, str) or result.startswith("API Error:"):
+        try:
+            result = get_completion(
+                [
+                    {
+                        "role": "system",
+                        "content": (
+                            "你是会话标题生成器。根据对话生成一个准确、简短的中文标题，"
+                            "建议 2 到 12 个汉字。只输出标题，不要引号、标点、解释或前缀。"
+                        ),
+                    },
+                    {"role": "user", "content": conversation},
+                ],
+                stream=False,
+                temperature=0.2,
+                runtime=getattr(self.current_handler, "runtime", None),
+            )
+        except ProviderError:
+            return None
+        if not isinstance(result, str):
             return None
         return result
 

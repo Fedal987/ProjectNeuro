@@ -27,17 +27,15 @@ class MessageHandler:
         agent_factory = create_reasoning_agent if self.reasoning_enabled else create_non_reasoning_agent
         self.agent = agent_factory(
             system_prompt=self.system_prompt,
-            api_key=api.api_key,
+            provider=self.runtime.provider,
             workspace=Path.cwd(),
             model=api.model,
-            base_url=api.base_url,
             thinking=reasoning.thinking if self.reasoning_enabled else False,
             reasoning_effort=reasoning.effort if self.reasoning_enabled else "",
             auto_approve=reasoning.auto_approve,
             max_steps=reasoning.max_steps,
             temperature=api.temperature,
             command_timeout=reasoning.command_timeout,
-            usage_tracker=self.runtime.usage_tracker,
         )
         self.history = self.agent.messages
         self.use_stream = api.stream

@@ -1,4 +1,6 @@
 [API_MANAGER]
+PROTOCOL = "openai_compatible"
+PROVIDER = "siliconflow"
 BASE_URL = "https://api.siliconflow.cn/v1" # 可替换为你使用的实际Provider URL
 API_KEY = "" # 在这里填写您Provider提供的API KEY
 MODEL = "deepseek-ai/DeepSeek-V4-Flash" # 当前模型

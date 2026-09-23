@@ -4,7 +4,7 @@ from collections.abc import Callable
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
-from openai import APIError
+from src.main.api.exceptions import ProviderError
 from src.main.msg.session_manager import SessionManager
 
 
@@ -126,7 +126,7 @@ class CommandManager:
 
             try:
                 models = list_models(runtime=handler.runtime)
-            except (APIError, ValueError, TypeError, AttributeError) as exc:
+            except (ProviderError, ValueError, TypeError, AttributeError) as exc:
                 self.console.print(
                     self.tr("model_list_failed", error=exc), style="red", markup=False,
                 )

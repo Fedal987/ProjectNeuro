@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.main.ui.i18n import tr
-from src.main.tools.base import ToolError
+from src.main.api.exceptions import ProviderError
 from .context import StreamEvent
 from .exceptions import ConversationInterrupted
 
@@ -26,7 +26,7 @@ class AgentLoop:
             except ConversationInterrupted:
                 self._append_pending_user_messages()
                 return tr("conversation_interrupted")
-            except ToolError as exc:
+            except ProviderError as exc:
                 return self._record_error(tr("agent_api_error", error=exc))
             assistant_message = {
                 "role": "assistant",
@@ -72,7 +72,7 @@ class AgentLoop:
         except ConversationInterrupted:
             self._append_pending_user_messages()
             return tr("conversation_interrupted")
-        except ToolError as exc:
+        except ProviderError as exc:
             return self._record_error(tr("agent_api_error", error=exc))
         content = message.get("content") or limit_message
         self._append_message({"role": "assistant", "content": content})
@@ -122,7 +122,7 @@ class AgentLoop:
                     yield StreamEvent("queued_user", text)
                 yield StreamEvent("interrupted", tr("conversation_interrupted"))
                 return
-            except ToolError as exc:
+            except ProviderError as exc:
                 yield StreamEvent(
                     "error", self._record_error(tr("agent_api_error", error=exc))
                 )
@@ -195,7 +195,7 @@ class AgentLoop:
                 yield StreamEvent("queued_user", text)
             yield StreamEvent("interrupted", tr("conversation_interrupted"))
             return
-        except ToolError as exc:
+        except ProviderError as exc:
             yield StreamEvent(
                 "error", self._record_error(tr("agent_api_error", error=exc))
             )

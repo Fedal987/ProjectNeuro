@@ -7,7 +7,7 @@ from pathlib import Path
 from threading import Event, Lock
 from typing import Any, Callable
 
-import requests
+from src.main.api.provider import RequestContext
 
 
 def get_current_path() -> str:
@@ -26,8 +26,9 @@ class AgentContext:
         self._read_paths: set[Path] = set()
         self._last_failed_call: str | None = None
         self._cancel_event = Event()
-        self._response_lock = Lock()
-        self._active_response: requests.Response | None = None
+        self._request_context = RequestContext(
+            self._cancel_event, lambda usage: self._emit_event("token_usage", usage)
+        )
         self._interaction_paused: Callable[[], None] | None = None
         self._interaction_resumed: Callable[[], None] | None = None
         self._pending_user_messages: deque[str] = deque()
@@ -71,18 +72,8 @@ class AgentContext:
             self.add_user_message(text)
         return pending
 
-    def _record_usage(self, usage: Any) -> None:
-        if isinstance(usage, dict):
-            self._emit_event("token_usage", usage)
-        if self.usage_tracker is not None and isinstance(usage, dict):
-            self.usage_tracker.record(usage)
-
     def interrupt(self) -> None:
-        self._cancel_event.set()
-        with self._response_lock:
-            response = self._active_response
-        if response is not None:
-            response.close()
+        self._request_context.cancel()
 
     def set_interaction_callbacks(
         self,
@@ -91,15 +82,6 @@ class AgentContext:
     ) -> None:
         self._interaction_paused = paused
         self._interaction_resumed = resumed
-
-    def _set_active_response(self, response: requests.Response) -> None:
-        with self._response_lock:
-            self._active_response = response
-
-    def _clear_active_response(self, response: requests.Response | None) -> None:
-        with self._response_lock:
-            if self._active_response is response:
-                self._active_response = None
 
     def _record_error(self, content: str) -> str:
         self._append_message({"role": "assistant", "content": content})

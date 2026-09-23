@@ -20,7 +20,6 @@ classifiers = [
     "Topic :: Software Development",
 ]
 dependencies = [
-    "openai~=2.43.0",
     "prompt-toolkit~=3.0.52",
     "psutil~=7.2.2",
     "pygments~=2.20.0",

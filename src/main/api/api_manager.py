@@ -1,7 +1,8 @@
 """Explicit API runtime initialization; importing this module performs no I/O."""
 from dataclasses import dataclass, field
 
-from openai import OpenAI
+from src.main.api.provider import ModelProvider
+from src.main.api.factory import create_provider
 
 from src.main.config import AppConfig, load_config
 from src.main.api.usage import UsageTracker
@@ -10,13 +11,13 @@ from src.main.api.usage import UsageTracker
 @dataclass
 class APIRuntime:
     config: AppConfig
-    client: OpenAI
+    provider: ModelProvider
     usage_tracker: UsageTracker = field(default_factory=UsageTracker)
 
     def close(self) -> None:
         global _default_runtime
         try:
-            self.client.close()
+            self.provider.close()
         finally:
             if _default_runtime is self:
                 _default_runtime = None
@@ -31,22 +32,23 @@ class APIRuntime:
 _default_runtime: APIRuntime | None = None
 
 
-def create_runtime(config: AppConfig, *, client: OpenAI | None = None,
+def create_runtime(config: AppConfig, *, provider: ModelProvider | None = None,
                    usage_tracker: UsageTracker | None = None) -> APIRuntime:
     """Create independent dependencies without reading files or changing defaults."""
+    tracker = usage_tracker if usage_tracker is not None else UsageTracker()
     return APIRuntime(
         config,
-        client if client is not None else OpenAI(base_url=config.api.base_url, api_key=config.api.api_key),
-        usage_tracker if usage_tracker is not None else UsageTracker(),
+        provider if provider is not None else create_provider(config.api, tracker),
+        tracker,
     )
 
 
-def initialize(config: AppConfig, *, client: OpenAI | None = None) -> APIRuntime:
+def initialize(config: AppConfig, *, provider: ModelProvider | None = None) -> APIRuntime:
     """Install an explicitly configured default for callers using module helpers."""
     global _default_runtime
     if _default_runtime is not None:
         raise RuntimeError("API runtime is already initialized; close it before reinitializing")
-    _default_runtime = create_runtime(config, client=client)
+    _default_runtime = create_runtime(config, provider=provider)
     return _default_runtime
 
 
@@ -58,45 +60,30 @@ def get_runtime() -> APIRuntime:
 
 def list_models(*, runtime: APIRuntime | None = None) -> list[str]:
     runtime = runtime if runtime is not None else get_runtime()
-    page = runtime.client.with_options(timeout=15.0, max_retries=0).models.list()
-    return sorted({model.id for model in page.data if isinstance(model.id, str) and model.id.strip()})
+    return runtime.provider.list_models()
 
 
-def _error_chunks(message):
-    yield message
-
-
-def _stream_chunks(response, runtime):
+def _stream_chunks(response):
     try:
         for chunk in response:
-            if chunk.usage is not None:
-                runtime.usage_tracker.record(chunk.usage.model_dump())
-            if chunk.choices and chunk.choices[0].delta.content:
-                yield chunk.choices[0].delta.content
-    except Exception as exc:
-        yield f"API Error: {exc}"
+            choices = chunk.get("choices") or []
+            if choices and choices[0]["delta"].get("content"):
+                yield choices[0]["delta"]["content"]
     finally:
-        response.close()
+        close = getattr(response, "close", None)
+        if close is not None:
+            close()
 
 
 def get_completion(messages, stream=False, temperature=None, *, runtime: APIRuntime | None = None):
     runtime = runtime if runtime is not None else get_runtime()
     settings = runtime.config.api
     use_stream = settings.stream if stream is None else stream
-    try:
-        response = runtime.client.chat.completions.create(
-            model=settings.model, messages=messages, stream=use_stream,
-            temperature=settings.temperature if temperature is None else temperature,
-        )
-        if use_stream:
-            return _stream_chunks(response, runtime)
-        if response.usage is not None:
-            runtime.usage_tracker.record(response.usage.model_dump())
-        return response.choices[0].message.content
-    except Exception as exc:
-        # Bind text now: Python clears exc when this exception handler exits.
-        message = f"API Error: {exc}"
-        return _error_chunks(message) if use_stream else message
+    options = dict(model=settings.model,
+                   temperature=settings.temperature if temperature is None else temperature)
+    if use_stream:
+        return _stream_chunks(runtime.provider.stream(messages, **options))
+    return runtime.provider.complete(messages, **options).get("content")
 
 
 def get_completion_stream(messages, temperature=None, *, runtime: APIRuntime | None = None):

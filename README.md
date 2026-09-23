@@ -8,9 +8,9 @@
 
 An Open-Source AI Agent Application With MCP Based On Python
 
-- Code Agent
-- Worker Mode (In Development)
-- Tool Calling
+- Code Agent  
+- Worker Mode (In Development)  
+- Tool Calling  
 - Data Collection 
 
 <br clear="right"/>

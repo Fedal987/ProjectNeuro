@@ -36,7 +36,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 from src.main.ui.i18n import LANGUAGE_NAMES, get_language, set_language, tr
-from src.main.tool.toolcall_utils import get_current_path
+from src.main.agent.context import get_current_path
 from src.main.api.usage import UsageSnapshot, UsageTracker
 
 

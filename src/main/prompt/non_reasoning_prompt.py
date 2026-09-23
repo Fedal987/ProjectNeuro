@@ -5,7 +5,7 @@
     GitHub: https://github.com/Fedal987/neuro-cli-py
 """
 
-from src.main.tool.toolcall_utils import Agent
+from src.main.agent.agent import Agent
 
 
 def build_prompt() -> str:

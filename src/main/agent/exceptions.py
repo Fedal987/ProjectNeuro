@@ -1,0 +1,2 @@
+class ConversationInterrupted(Exception):
+    pass

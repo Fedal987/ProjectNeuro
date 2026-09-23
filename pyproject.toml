@@ -1,6 +1,50 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "neuro-cli-python"
+name = "ProjectNeuro"
 version = "0.1.0"
-description = "Add your description here"
+description = "A terminal AI agent for coding and tool-assisted tasks."
+readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Fedal987" }]
+keywords = ["ai", "agent", "cli", "coding", "tool-calling"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development",
+]
+dependencies = [
+    "openai~=2.43.0",
+    "prompt-toolkit~=3.0.52",
+    "psutil~=7.2.2",
+    "pygments~=2.20.0",
+    "requests~=2.34.2",
+    "rich~=15.0.0",
+    "selenium~=4.45.0",
+    "tomli~=2.4.1; python_version < '3.11'",
+]
+
+[project.scripts]
+neuro = "src.main.ui.terminal_cli:main"
+
+[project.urls]
+Repository = "https://github.com/Fedal987/ProjectNeuro"
+Issues = "https://github.com/Fedal987/ProjectNeuro/issues"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.main", "src.main.*"]
+exclude = ["src.main.ui.i18n"]
+namespaces = true
+
+[tool.setuptools.package-data]
+"src.main.ui" = ["i18n/*.json"]

@@ -201,7 +201,6 @@ uv run neuro.py
 P0:
 - 统一agent与api_manager的模型provider实现
 - 修复沙箱安全边界
-- 恢复跨平台 subprocess 输出解码
 
 P1:
 - 将toolregistry改为tool对象注册机制

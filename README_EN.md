@@ -201,7 +201,6 @@ If you prefer the convenience of a quick npm deployment, you will be able to use
 P0:
 - Unify the model provider implementation between Agent and api_manager
 - Fix sandbox security boundaries
-- Restore cross-platform subprocess output decoding
 
 P1:
 - Refactor ToolRegistry into a tool object registration system

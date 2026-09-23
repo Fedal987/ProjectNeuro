@@ -30,7 +30,7 @@ class Agent(AgentContext, AgentLoop):
         reasoning_effort: str = REASONING_MODE,
         auto_approve: bool = False,
         max_steps: int = MAX_STEPS,
-        temperature: float = 0.2,
+        temperature: float | None = None,
         command_timeout: int = 60,
         confirm: Callable[[str], bool] | None = None,
     ):

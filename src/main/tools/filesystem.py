@@ -27,7 +27,7 @@ class FilesystemTools(BaseTool):
             )
             if level >= depth:
                 dirs[:] = []
-            relative_root = root_path.relative_to(self.context.workspace)
+            relative_root = self._display_path(root_path)
             if level == 0:
                 lines.append(f"{relative_root or Path('.')} /")
             for directory in dirs:
@@ -70,7 +70,7 @@ class FilesystemTools(BaseTool):
         if target.exists() and target not in self.context._read_paths:
             raise ToolError(f"修改已有文件前必须先读取它: {path}")
         self.context.approval._require_approval(
-            tr("approval_write_file", path=target.relative_to(self.context.workspace))
+            tr("approval_write_file", path=self._display_path(target))
         )
         try:
             original, encoding = read_text_file(target) if target.exists() else ("", "utf-8")
@@ -97,7 +97,7 @@ class FilesystemTools(BaseTool):
         if not old_content or occurrences != 1:
             raise ToolError(f"old_content 必须在文件中恰好出现一次，当前出现 {occurrences} 次")
         self.context.approval._require_approval(
-            tr("approval_modify_file", path=target.relative_to(self.context.workspace))
+            tr("approval_modify_file", path=self._display_path(target))
         )
         try:
             data = encode_text(content.replace(old_content, new_content, 1), encoding, content)

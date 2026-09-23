@@ -9,6 +9,7 @@ from .exceptions import ProviderConnectionError, ProviderResponseError
 from .provider import RequestContext
 from .transform import RequestTransform, resolve_provider
 from .usage import UsageTracker
+from .tool_id_compat import retry_messages
 
 
 class OpenAICompatibleProvider:
@@ -34,7 +35,7 @@ class OpenAICompatibleProvider:
         return f"{base}/{resource}"
 
     def _payload(self, messages: list[dict[str, Any]], *, model: str,
-                 temperature: float, tools: list[dict[str, Any]] | None,
+                 temperature: float | None, tools: list[dict[str, Any]] | None,
                  thinking: bool, reasoning_effort: str, stream: bool) -> dict[str, Any]:
         return self.transform.apply(
             messages, model=model, temperature=temperature, tools=tools,
@@ -135,7 +136,22 @@ class OpenAICompatibleProvider:
                 })
 
     def complete(self, messages: list[dict[str, Any]], *, model: str,
-                 temperature: float = 0.2, tools: list[dict[str, Any]] | None = None,
+                 temperature: float | None = None, tools: list[dict[str, Any]] | None = None,
+                 thinking: bool = False, reasoning_effort: str = "",
+                 request_context: RequestContext | None = None) -> dict[str, Any]:
+        options = dict(model=model, temperature=temperature, tools=tools,
+                       thinking=thinking, reasoning_effort=reasoning_effort,
+                       request_context=request_context)
+        try:
+            return self._complete_once(messages, **options)
+        except ProviderResponseError as exc:
+            compatible = retry_messages(messages, exc)
+            if compatible is None:
+                raise
+        return self._complete_once(compatible, **options)
+
+    def _complete_once(self, messages: list[dict[str, Any]], *, model: str,
+                 temperature: float | None = None, tools: list[dict[str, Any]] | None = None,
                  thinking: bool = False, reasoning_effort: str = "",
                  request_context: RequestContext | None = None) -> dict[str, Any]:
         payload = self._payload(messages, model=model, temperature=temperature, tools=tools,
@@ -152,7 +168,27 @@ class OpenAICompatibleProvider:
             return data["choices"][0]["message"]
 
     def stream(self, messages: list[dict[str, Any]], *, model: str,
-               temperature: float = 0.2, tools: list[dict[str, Any]] | None = None,
+               temperature: float | None = None, tools: list[dict[str, Any]] | None = None,
+               thinking: bool = False, reasoning_effort: str = "",
+               request_context: RequestContext | None = None) -> Iterator[dict[str, Any]]:
+        options = dict(model=model, temperature=temperature, tools=tools,
+                       thinking=thinking, reasoning_effort=reasoning_effort,
+                       request_context=request_context)
+        emitted = False
+        try:
+            for chunk in self._stream_once(messages, **options):
+                emitted = True
+                yield chunk
+            return
+        except ProviderResponseError as exc:
+            # Never replay a stream after delivering content or tool calls.
+            compatible = None if emitted else retry_messages(messages, exc)
+            if compatible is None:
+                raise
+        yield from self._stream_once(compatible, **options)
+
+    def _stream_once(self, messages: list[dict[str, Any]], *, model: str,
+               temperature: float | None = None, tools: list[dict[str, Any]] | None = None,
                thinking: bool = False, reasoning_effort: str = "",
                request_context: RequestContext | None = None) -> Iterator[dict[str, Any]]:
         payload = self._payload(messages, model=model, temperature=temperature, tools=tools,

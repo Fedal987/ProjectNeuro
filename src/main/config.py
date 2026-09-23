@@ -20,7 +20,7 @@ class APIConfig:
     api_key: str = field(repr=False)
     model: str
     stream: bool = True
-    temperature: float = 0.2
+    temperature: float | None = None
     protocol: str = "openai_compatible"
     provider: str = "auto"
     defaults: ModelOptions = field(default_factory=ModelOptions)
@@ -36,7 +36,10 @@ class APIConfig:
             raise ValueError("API_MANAGER.BASE_URL must be an HTTP(S) URL")
         if type(self.stream) is not bool:
             raise ValueError("API_MANAGER.STREAM must be a boolean")
-        if type(self.temperature) not in (int, float) or not isfinite(self.temperature) or self.temperature < 0:
+        if self.temperature is not None and (
+            type(self.temperature) not in (int, float)
+            or not isfinite(self.temperature) or self.temperature < 0
+        ):
             raise ValueError("API_MANAGER.TEMPERATURE must be a finite non-negative number")
         for name in ("protocol", "provider"):
             value = getattr(self, name)
@@ -92,7 +95,7 @@ class AppConfig:
                 base_url=api["BASE_URL"], api_key=api["API_KEY"], model=api["MODEL"],
                 stream=api.get("STREAM", True),
                 # Preserve the spelling used by existing config.toml files.
-                temperature=api.get("TEMPERATURE", api.get("TEMPREATURE", 0.2)),
+                temperature=api.get("TEMPERATURE", api.get("TEMPREATURE")),
                 protocol=api.get("PROTOCOL", "openai_compatible"),
                 provider=api.get("PROVIDER", "auto"),
                 defaults=ModelOptions.from_mapping(api.get("DEFAULTS", {})),

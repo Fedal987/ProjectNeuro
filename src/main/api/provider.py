@@ -39,7 +39,7 @@ class RequestContext:
 class ModelProvider(Protocol):
     def complete(
         self, messages: list[dict[str, Any]], *, model: str,
-        temperature: float = 0.2, tools: list[dict[str, Any]] | None = None,
+        temperature: float | None = None, tools: list[dict[str, Any]] | None = None,
         thinking: bool = False, reasoning_effort: str = "",
         request_context: RequestContext | None = None,
     ) -> dict[str, Any]:
@@ -47,7 +47,7 @@ class ModelProvider(Protocol):
 
     def stream(
         self, messages: list[dict[str, Any]], *, model: str,
-        temperature: float = 0.2, tools: list[dict[str, Any]] | None = None,
+        temperature: float | None = None, tools: list[dict[str, Any]] | None = None,
         thinking: bool = False, reasoning_effort: str = "",
         request_context: RequestContext | None = None,
     ) -> Iterator[dict[str, Any]]:

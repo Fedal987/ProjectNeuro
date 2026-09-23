@@ -30,9 +30,9 @@ def build_tool_definitions() -> list[dict[str, Any]]:
     return [
         tool_definition(
             "list_directory",
-            "List files and directories inside the workspace. Use this first when the project structure is unknown.",
+            "List files and directories. Outside-workspace paths require user approval unless Full Control Mode is enabled. Use this first when the project structure is unknown.",
             {
-                "path": {"type": "string", "description": "Workspace-relative directory path; use '.' for root."},
+                "path": {"type": "string", "description": "Directory path, absolute or relative to the workspace; use '.' for root. External paths trigger approval."},
                 "depth": {"type": "integer", "description": "Recursion depth from 1 to 4.", "minimum": 1, "maximum": 4},
             },
             ["path"],
@@ -41,7 +41,7 @@ def build_tool_definitions() -> list[dict[str, Any]]:
             "read_file",
             "Read a UTF-8, GBK, or BOM-marked Unicode text file. Existing files must be read before they can be modified.",
             {
-                "path": {"type": "string", "description": "Workspace-relative file path."},
+                "path": {"type": "string", "description": "File path, absolute or relative to the workspace. External paths trigger approval."},
                 "start_line": {"type": "integer", "minimum": 1},
                 "end_line": {"type": "integer", "minimum": 1},
             },
@@ -52,7 +52,7 @@ def build_tool_definitions() -> list[dict[str, Any]]:
             "Search text in project files before guessing where a symbol or behavior is defined.",
             {
                 "query": {"type": "string", "description": "Literal text to search for."},
-                "path": {"type": "string", "description": "Workspace-relative file or directory; defaults to '.'."},
+                "path": {"type": "string", "description": "File or directory, absolute or relative to the workspace; defaults to '.'. External paths trigger approval."},
             },
             ["query"],
         ),
@@ -60,7 +60,7 @@ def build_tool_definitions() -> list[dict[str, Any]]:
             "write_file",
             "Create a text file or overwrite one that has already been read. Requires user approval unless auto-approve is enabled.",
             {
-                "path": {"type": "string", "description": "Workspace-relative file path."},
+                "path": {"type": "string", "description": "File path, absolute or relative to the workspace. External paths trigger approval."},
                 "content": {"type": "string", "description": "Complete new file content."},
             },
             ["path", "content"],
@@ -69,7 +69,7 @@ def build_tool_definitions() -> list[dict[str, Any]]:
             "replace_in_file",
             "Replace one exact, unique text block in a file that has already been read. Requires user approval unless auto-approve is enabled.",
             {
-                "path": {"type": "string", "description": "Workspace-relative file path."},
+                "path": {"type": "string", "description": "File path, absolute or relative to the workspace. External paths trigger approval."},
                 "old_content": {"type": "string", "description": "Exact existing text; it must occur exactly once."},
                 "new_content": {"type": "string", "description": "Replacement text."},
             },

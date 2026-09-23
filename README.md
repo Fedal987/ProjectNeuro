@@ -91,7 +91,7 @@ Step 3.4: 填写配置文件中的内容
 BASE_URL = "https://api.siliconflow.cn/v1" # 可替换为你使用的实际Provider URL
 API_KEY = "" # 在这里填写您Provider提供的API KEY
 MODEL = "deepseek-ai/DeepSeek-V4-Flash" # 当前模型
-TEMPREATURE = 0.7 # 大概率不用管
+# TEMPERATURE = 0.7 # 可选；省略则不发送 temperature，也兼容旧拼写 TEMPREATURE
 STREAM = true # 不用管
 
 [REASONING]
@@ -164,7 +164,7 @@ vim config.toml
 BASE_URL = "https://api.siliconflow.cn/v1" # 可替换为你使用的实际Provider URL
 API_KEY = "" # 在这里填写您Provider提供的API KEY
 MODEL = "deepseek-ai/DeepSeek-V4-Flash" # 当前模型
-TEMPREATURE = 0.7 # 大概率不用管
+# TEMPERATURE = 0.7 # 可选；省略则不发送 temperature，也兼容旧拼写 TEMPREATURE
 STREAM = true # 不用管
 
 [REASONING]

@@ -29,6 +29,8 @@ PROVIDER = "deepseek"
 旧配置无需修改。代理地址无法可靠推断上游服务商，应显式设置 `PROVIDER`。
 显式设置 `openai_compatible` 会关闭服务商自动推断。
 
+`API_MANAGER.TEMPERATURE` 是可选的非负有限数值；删除或注释后，普通对话、流式请求和会话命名均不发送 `temperature`。旧拼写 `TEMPREATURE` 仍可用，两者同时配置时以 `TEMPERATURE` 为准。
+
 ## 默认配置和模型覆盖
 
 以下是完整的配置结构示例，密钥和远端模型 ID 需要替换：
@@ -41,7 +43,7 @@ MODEL = "reasoner"
 PROTOCOL = "openai_compatible"
 PROVIDER = "deepseek"
 STREAM = true
-TEMPERATURE = 0.2
+# TEMPERATURE = 0.2 # 可选；省略则不发送 temperature
 
 [API_MANAGER.DEFAULTS.EXTRA_BODY]
 max_tokens = 4096
@@ -89,6 +91,16 @@ EFFORT = "high"
 
 能力字段省略时继承上层，通用默认值为 true，以保持现有行为；这些配置不会自动探测服务端能力。
 关闭 `STREAM_USAGE` 后仍会统计服务器实际返回的 usage，但不保证服务器会返回它。
+
+如果上游报错不支持 `stream_options.include_usage`，可在配置中关闭：
+
+```toml
+[API_MANAGER.DEFAULTS.CAPABILITIES]
+STREAM_USAGE = false
+```
+
+这会完全省略 `stream_options`，不影响流式输出。`config.toml` 和 `templates/config.toml.bak` 已显式关闭此选项；支持该参数的上游可改为 `true`。省略此配置时默认启用，单个模型仍可通过自己的 `CAPABILITIES.STREAM_USAGE` 覆盖。
+
 
 `THINKING_FORMAT` 支持 `none`、`thinking` 和 `enable_thinking`。
 `none` 表示不发送思考开关，不代表强制关闭服务端思考，也不禁止推理强度参数。

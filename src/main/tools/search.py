@@ -46,7 +46,7 @@ class SearchTools(BaseTool):
             try:
                 for line_number, line in enumerate(read_text_file(file_path)[0].splitlines(), 1):
                     if query in line:
-                        relative = file_path.relative_to(self.context.workspace)
+                        relative = self._display_path(file_path)
                         matches.append(f"{relative}:{line_number}:{line}")
                         if len(matches) >= 500:
                             return "\n".join(matches) + "\n... 结果过多，已截断"

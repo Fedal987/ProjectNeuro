@@ -521,7 +521,6 @@ class SessionManager:
                     {"role": "user", "content": conversation},
                 ],
                 stream=False,
-                temperature=0.2,
                 runtime=getattr(self.current_handler, "runtime", None),
             )
         except ProviderError:

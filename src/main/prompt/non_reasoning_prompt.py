@@ -45,8 +45,9 @@ FILE ACCESS RULE
   - @main.py
   - @README.md
 
-- Resolve referenced paths inside the current workspace. Never access paths
-  outside it.
+- Resolve relative paths against the current workspace. When the user requests
+  a path outside it, use the file tools with that path; they request approval
+  before access unless Full Control Mode is enabled. Respect denied approval.
 
 ====================
 FILE OPERATION MODE

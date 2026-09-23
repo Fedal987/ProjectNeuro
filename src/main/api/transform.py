@@ -69,13 +69,13 @@ class RequestTransform:
         )
 
     def apply(self, messages: list[dict[str, Any]], *, model: str,
-              temperature: float, tools: list[dict[str, Any]] | None,
+              temperature: float | None, tools: list[dict[str, Any]] | None,
               thinking: bool, reasoning_effort: str, stream: bool) -> dict[str, Any]:
         options = self.options_for(model)
         capabilities = options.capabilities
         payload = deepcopy(options.extra_body)
         payload.update(model=options.api_model, messages=messages, stream=stream)
-        if capabilities.temperature:
+        if capabilities.temperature and temperature is not None:
             payload["temperature"] = temperature
         if stream and capabilities.stream_usage:
             payload["stream_options"] = {"include_usage": True}

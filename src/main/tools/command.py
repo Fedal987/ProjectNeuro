@@ -4,6 +4,7 @@ import shlex
 import subprocess
 from src.main.ui.i18n import tr
 from src.main.encoding import decode_output
+from src.main.sandbox import NativeRunner, sandbox_runner
 
 from .base import BaseTool, ToolError
 
@@ -16,17 +17,18 @@ class CommandTool(BaseTool):
             raise ToolError(f"命令解析失败: {exc}") from exc
         if not arguments:
             raise ToolError("命令不能为空")
-        if arguments[0] in {"rm", "sudo", "su", "shutdown", "reboot", "mkfs", "dd"}:
+        if not self.context.auto_approve and arguments[0] in {"rm", "sudo", "su", "shutdown", "reboot", "mkfs", "dd"}:
             raise ToolError(f"出于安全原因不允许执行命令: {arguments[0]}")
-        if not self.context.approval._is_low_risk_command(arguments):
+        writable = not self.context.approval._is_low_risk_command(arguments)
+        if not self.context.auto_approve and writable:
             self.context.approval._require_approval(tr("approval_run_command", command=command))
         try:
-            completed = subprocess.run(
+            runner = NativeRunner() if self.context.auto_approve else sandbox_runner()
+            completed = runner.run(
                 arguments,
-                cwd=self.context.workspace,
-                capture_output=True,
+                workspace=self.context.workspace,
                 timeout=self.context.command_timeout,
-                check=False,
+                writable=writable,
             )
         except FileNotFoundError as exc:
             raise ToolError(f"找不到命令: {arguments[0]}") from exc

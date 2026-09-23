@@ -24,9 +24,17 @@ class BaseTool:
         resolved = candidate.resolve()
         try:
             resolved.relative_to(self.context.workspace)
-        except ValueError as exc:
-            raise ToolError(f"路径超出工作目录: {path}") from exc
+        except ValueError:
+            self.context.approval._require_approval(
+                f"路径超出工作目录，允许本次访问 {resolved} 吗？"
+            )
         return resolved
+
+    def _display_path(self, path: Path) -> Path:
+        try:
+            return path.relative_to(self.context.workspace)
+        except ValueError:
+            return path
 
     @staticmethod
     def _truncate(text: str, limit: int = 20000) -> str:

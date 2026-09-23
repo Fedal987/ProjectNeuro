@@ -11,6 +11,7 @@ import os
 import signal
 import sys
 import threading
+import time
 from collections.abc import Callable
 from io import StringIO
 from queue import Empty, Queue
@@ -112,6 +113,7 @@ class ConversationInput:
         self._transcript = ""
         self._transcript_lock = threading.Lock()
         self._blocks: list[dict[str, Any]] = []
+        self._working_since: float | None = None
         self._input_area: TextArea | None = None
         self._output_area: Window | None = None
         self._escape_detector = DoubleEscapeDetector()
@@ -137,10 +139,27 @@ class ConversationInput:
 
     def begin_response(self) -> None:
         self._responding.set()
+        self.set_working(True)
 
     def finish_response(self) -> None:
         self._responding.clear()
+        self.set_working(False)
         self._escape_detector.reset()
+
+    def set_working(self, working: bool) -> None:
+        with self._transcript_lock:
+            if working:
+                if self._working_since is None:
+                    self._working_since = time.monotonic()
+            else:
+                self._working_since = None
+        self._publish_update(wait=False)
+
+    def response_progress(self, kind: str, content: str) -> None:
+        if kind in {"tool_result", "queued_user"}:
+            self.set_working(True)
+        elif kind not in {"reasoning", "content"} or content:
+            self.set_working(False)
 
     def clear_output(self) -> None:
         with self._transcript_lock:
@@ -281,6 +300,7 @@ class ConversationInput:
     def _formatted_output(self):
         with self._transcript_lock:
             blocks = [dict(block) for block in self._blocks]
+            working_since = self._working_since
         with self._render_condition:
             self._displayed_revision = self._revision
         fragments: list[tuple[str, str]] = []
@@ -306,6 +326,12 @@ class ConversationInput:
             fragments.extend(rendered)
             if len(rendered_text) < len(text):
                 fragments.append(("", text[len(rendered_text):]))
+        if working_since is not None:
+            minutes, seconds = divmod(max(0, int(time.monotonic() - working_since)), 60)
+            fragments.append((
+                "class:reasoning-title",
+                f"\nNeuro Working... ({minutes}m/{seconds}s)\n",
+            ))
         # Keep the scroll target in the same snapshot as the rendered lines.
         fragments.append(("[SetCursorPosition]", ""))
         return FormattedText(fragments)
@@ -728,6 +754,7 @@ def _run_cli(runtime):
                     if msg_handler.reasoning_enabled:
                         displayed_kind = None
                         for event in msg_handler.get_response_events(user_input):
+                            conversation_input.response_progress(event.kind, event.content)
                             if event.kind == "reasoning":
                                 if displayed_kind != "reasoning":
                                     conversation_input.append_output(
@@ -783,10 +810,12 @@ def _run_cli(runtime):
                             "class:answer-title",
                         )
                         for chunk in msg_handler.get_response_stream(user_input):
+                            conversation_input.response_progress("content", chunk)
                             conversation_input.append_markdown(chunk)
                     conversation_input.append_output("\n")
                 else:
                     reply = msg_handler.get_response(user_input)
+                    conversation_input.set_working(False)
                     conversation_input.append_output(
                         "\nNeuro >\n",
                         "class:answer-title",

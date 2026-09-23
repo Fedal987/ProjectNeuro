@@ -91,7 +91,7 @@ Step 3.4: Fill in the configuration file.
 BASE_URL = "https://api.siliconflow.cn/v1" # Replace this with the URL of your actual provider
 API_KEY = "" # Enter the API key supplied by your provider
 MODEL = "deepseek-ai/DeepSeek-V4-Flash" # Model currently in use
-TEMPREATURE = 0.7 # Usually does not need to be changed
+# TEMPERATURE = 0.7 # Optional; omit to avoid sending temperature (legacy TEMPREATURE also supported)
 STREAM = true # Usually does not need to be changed
 
 [REASONING]
@@ -164,7 +164,7 @@ vim config.toml
 BASE_URL = "https://api.siliconflow.cn/v1" # Replace this with the URL of your actual provider
 API_KEY = "" # Enter the API key supplied by your provider
 MODEL = "deepseek-ai/DeepSeek-V4-Flash" # Model currently in use
-TEMPREATURE = 0.7 # Usually does not need to be changed
+# TEMPERATURE = 0.7 # Optional; omit to avoid sending temperature (legacy TEMPREATURE also supported)
 STREAM = true # Usually does not need to be changed
 
 [REASONING]

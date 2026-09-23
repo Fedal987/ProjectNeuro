@@ -199,21 +199,25 @@ uv run neuro.py
 ## TODO list:
 
 P0:
-- 暂无
+- 统一agent与api_manager的模型provider实现
+- 修复沙箱安全边界
+- 恢复跨平台 subprocess 输出解码
 
 P1:
-- 统一两套api实现
-- 将工具实现从 `Agent` 中拆出
-- 合并同步和流式Agent循环
-- 拆分终端UI和入口
-- 修复翻译问题
-- 拆分单模块功能过多问题
+- 将toolregistry改为tool对象注册机制
+- 合并同步和流式loop
+- 文件修改使用atomic write
+- pluginapi
+- skillapi
+- 拆分 terminal_cli
+- 上下文压缩
+
 
 P2:
-- 完善 `pyproject.toml` 和入口
-- 增加依赖锁定与自动发布流程
-- 补全skills_handler和plugin_handler
-- 上下文压缩
+- 将src.main包迁移为project_neuro
+- 自动发布PyPI
+- Worker Mode
+- MCP 扩展
 - 绕过Anthropic Fuck Chinese
 
 ## 开发人员名单

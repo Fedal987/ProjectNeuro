@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any, Mapping
 from urllib.parse import urlsplit
 
+from src.main.encoding import read_text_file
+
 try:
     import tomllib
 except ModuleNotFoundError:
@@ -91,6 +93,5 @@ def load_config(path: str | Path | None = None) -> AppConfig:
         if not path.is_file():
             path = Path.cwd() / "config.toml"
     path = Path(path).expanduser()
-    with path.open("rb") as stream:
-        data = tomllib.load(stream)
+    data = tomllib.loads(read_text_file(path)[0])
     return AppConfig.from_mapping(data)

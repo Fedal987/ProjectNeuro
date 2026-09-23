@@ -39,7 +39,7 @@ def build_tool_definitions() -> list[dict[str, Any]]:
         ),
         tool_definition(
             "read_file",
-            "Read a UTF-8 text file. Existing files must be read before they can be modified.",
+            "Read a UTF-8, GBK, or BOM-marked Unicode text file. Existing files must be read before they can be modified.",
             {
                 "path": {"type": "string", "description": "Workspace-relative file path."},
                 "start_line": {"type": "integer", "minimum": 1},

@@ -37,6 +37,7 @@ from rich.text import Text
 
 from src.main.ui.i18n import LANGUAGE_NAMES, get_language, set_language, tr
 from src.main.agent.context import get_current_path
+from src.main.encoding import configure_terminal_encoding
 from src.main.api.usage import UsageSnapshot, UsageTracker
 
 
@@ -635,6 +636,7 @@ def build_exit_message(*, runtime=None) -> str:
 
 
 def main(config_path=None):
+    configure_terminal_encoding()
     from src.main.api.api_manager import initialize
     from src.main.config import load_config
 

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
+
+from src.main.encoding import decode_output, read_text_file
 
 from .base import BaseTool, ToolError
 
@@ -14,13 +17,15 @@ class SearchTools(BaseTool):
         if not target.exists():
             raise ToolError(f"搜索路径不存在: {path}")
 
-        command = ["rg", "--line-number", "--fixed-strings", "--glob", "!.git/**", query, str(target)]
+        if sys.platform == "win32":
+            return self._search_files_python(query, target)
+
+        command = ["rg", "--line-number", "--fixed-strings", "--glob", "!.git/**", "--", query, str(target)]
         try:
             completed = subprocess.run(
                 command,
                 cwd=self.context.workspace,
                 capture_output=True,
-                text=True,
                 timeout=self.context.command_timeout,
                 check=False,
             )
@@ -29,8 +34,8 @@ class SearchTools(BaseTool):
         if completed.returncode == 1:
             return "未找到匹配内容。"
         if completed.returncode != 0:
-            raise ToolError(completed.stderr.strip() or f"rg 退出码 {completed.returncode}")
-        return self._truncate(completed.stdout)
+            raise ToolError(decode_output(completed.stderr).strip() or f"rg 退出码 {completed.returncode}")
+        return self._truncate(decode_output(completed.stdout))
 
     def _search_files_python(self, query: str, target: Path) -> str:
         files = [target] if target.is_file() else target.rglob("*")
@@ -39,7 +44,7 @@ class SearchTools(BaseTool):
             if not file_path.is_file() or any(part in {".git", ".venv", "__pycache__"} for part in file_path.parts):
                 continue
             try:
-                for line_number, line in enumerate(file_path.read_text(encoding="utf-8").splitlines(), 1):
+                for line_number, line in enumerate(read_text_file(file_path)[0].splitlines(), 1):
                     if query in line:
                         relative = file_path.relative_to(self.context.workspace)
                         matches.append(f"{relative}:{line_number}:{line}")

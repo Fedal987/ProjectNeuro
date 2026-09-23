@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from src.main.ui.i18n import tr
+from src.main.encoding import encode_text, read_text_file
 
 from .base import BaseTool, ToolError
 
@@ -50,9 +51,9 @@ class FilesystemTools(BaseTool):
         if not target.is_file():
             raise ToolError(f"文件不存在: {path}")
         try:
-            content = target.read_text(encoding="utf-8")
+            content, _ = read_text_file(target)
         except UnicodeDecodeError as exc:
-            raise ToolError(f"文件不是可读取的 UTF-8 文本: {path}") from exc
+            raise ToolError(f"文件不是可读取的 UTF-8、GBK 或带 BOM 的 Unicode 文本: {path}") from exc
         except OSError as exc:
             raise ToolError(f"读取文件失败: {exc}") from exc
         self.context._read_paths.add(target)
@@ -72,9 +73,11 @@ class FilesystemTools(BaseTool):
             tr("approval_write_file", path=target.relative_to(self.context.workspace))
         )
         try:
+            original, encoding = read_text_file(target) if target.exists() else ("", "utf-8")
+            data = encode_text(content, encoding, original)
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(content, encoding="utf-8")
-        except OSError as exc:
+            target.write_bytes(data)
+        except (OSError, UnicodeError) as exc:
             raise ToolError(f"写入文件失败: {exc}") from exc
         self.context._read_paths.add(target)
         return f"成功写入 {target}"
@@ -84,9 +87,12 @@ class FilesystemTools(BaseTool):
         if target not in self.context._read_paths:
             raise ToolError(f"修改已有文件前必须先读取它: {path}")
         try:
-            content = target.read_text(encoding="utf-8")
+            content, encoding = read_text_file(target)
         except (OSError, UnicodeDecodeError) as exc:
             raise ToolError(f"读取文件失败: {exc}") from exc
+        if "\r\n" in content and "\n" not in content.replace("\r\n", ""):
+            old_content = old_content.replace("\r\n", "\n").replace("\n", "\r\n")
+            new_content = new_content.replace("\r\n", "\n").replace("\n", "\r\n")
         occurrences = content.count(old_content)
         if not old_content or occurrences != 1:
             raise ToolError(f"old_content 必须在文件中恰好出现一次，当前出现 {occurrences} 次")
@@ -94,7 +100,8 @@ class FilesystemTools(BaseTool):
             tr("approval_modify_file", path=target.relative_to(self.context.workspace))
         )
         try:
-            target.write_text(content.replace(old_content, new_content, 1), encoding="utf-8")
-        except OSError as exc:
+            data = encode_text(content.replace(old_content, new_content, 1), encoding, content)
+            target.write_bytes(data)
+        except (OSError, UnicodeError) as exc:
             raise ToolError(f"写入文件失败: {exc}") from exc
         return f"成功修改 {target}"

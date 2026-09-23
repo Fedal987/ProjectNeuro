@@ -3,6 +3,7 @@ from __future__ import annotations
 import shlex
 import subprocess
 from src.main.ui.i18n import tr
+from src.main.encoding import decode_output
 
 from .base import BaseTool, ToolError
 
@@ -24,7 +25,6 @@ class CommandTool(BaseTool):
                 arguments,
                 cwd=self.context.workspace,
                 capture_output=True,
-                text=True,
                 timeout=self.context.command_timeout,
                 check=False,
             )
@@ -32,9 +32,9 @@ class CommandTool(BaseTool):
             raise ToolError(f"找不到命令: {arguments[0]}") from exc
         except subprocess.TimeoutExpired as exc:
             raise ToolError(f"命令执行超过 {self.context.command_timeout} 秒") from exc
-        output = completed.stdout
+        output = decode_output(completed.stdout)
         if completed.stderr:
-            output += ("\n" if output else "") + completed.stderr
+            output += ("\n" if output else "") + decode_output(completed.stderr)
         result = f"退出码: {completed.returncode}\n{output.strip()}"
         if completed.returncode != 0:
             raise ToolError(self._truncate(result))

@@ -235,7 +235,23 @@ class CommandManager:
         self.console.print(
             f"[green]{self.tr('session_switched', name=selected.name)}[/green]"
         )
+        self._show_session_history(selected.handler.history)
         return False
+
+    def _show_session_history(self, messages: list[dict]) -> None:
+        for message in messages:
+            role = message.get("role")
+            content = message.get("content")
+            if role not in {"user", "assistant"} or not isinstance(content, str) or not content:
+                continue
+            self.console.print()
+            if role == "user":
+                self.console.print(
+                    f"{self.tr('user_prompt')}{content}", style="cyan", markup=False,
+                )
+            else:
+                self.console.print("Neuro >", style="magenta", markup=False)
+                self.console.print(Markdown(content))
 
     def _show_sessions(self) -> None:
         workspace = self.session_manager.current_workspace

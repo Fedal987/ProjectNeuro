@@ -98,6 +98,42 @@ class OpenAICompatibleProvider:
             if context:
                 context.on_usage(usage)
 
+    @contextmanager
+    def _response_diagnostics(self, response: requests.Response,
+                              context: RequestContext | None, *, stream: bool):
+        # Persist only an allowlist, never headers, credentials, or request bodies.
+        metadata: dict[str, Any] = {
+            "stream": stream, "transport_end": "consumer_closed", "finish_reasons": [],
+        }
+        request_id = response.headers.get("x-request-id")
+        if isinstance(request_id, str):
+            metadata["request_id"] = request_id
+        if isinstance(response.status_code, int):
+            metadata["http_status"] = response.status_code
+        try:
+            yield metadata
+        except Exception as exc:
+            metadata["transport_end"] = (
+                "interrupted" if context and context.cancelled.is_set() else "error"
+            )
+            metadata["error_type"] = type(exc).__name__
+            raise
+        finally:
+            if context and context.on_response:
+                context.on_response(metadata)
+
+    @staticmethod
+    def _capture_response_metadata(metadata: dict[str, Any], data: dict[str, Any]) -> None:
+        for name in ("id", "model", "system_fingerprint"):
+            if isinstance(data.get(name), str):
+                metadata[name] = data[name]
+        for choice in data.get("choices", []):
+            reason = choice.get("finish_reason")
+            if isinstance(reason, str):
+                metadata["finish_reasons"].append({
+                    "index": choice.get("index", 0), "reason": reason,
+                })
+
     def complete(self, messages: list[dict[str, Any]], *, model: str,
                  temperature: float = 0.2, tools: list[dict[str, Any]] | None = None,
                  thinking: bool = False, reasoning_effort: str = "",
@@ -105,11 +141,14 @@ class OpenAICompatibleProvider:
         payload = self._payload(messages, model=model, temperature=temperature, tools=tools,
                                 thinking=thinking, reasoning_effort=reasoning_effort, stream=False)
         with self._request("POST", "chat/completions", json=payload, timeout=120,
-                           request_context=request_context) as response:
+                           request_context=request_context) as response, self._response_diagnostics(
+                               response, request_context, stream=False) as metadata:
             data = self._validate(response.json())
+            self._capture_response_metadata(metadata, data)
             if request_context:
                 request_context.check()
             self._record_usage(data, request_context)
+            metadata["transport_end"] = "complete"
             return data["choices"][0]["message"]
 
     def stream(self, messages: list[dict[str, Any]], *, model: str,
@@ -119,7 +158,8 @@ class OpenAICompatibleProvider:
         payload = self._payload(messages, model=model, temperature=temperature, tools=tools,
                                 thinking=thinking, reasoning_effort=reasoning_effort, stream=True)
         with self._request("POST", "chat/completions", json=payload, timeout=120,
-                           request_context=request_context) as response:
+                           request_context=request_context) as response, self._response_diagnostics(
+                               response, request_context, stream=True) as metadata:
             response.encoding = "utf-8"
             for raw_line in response.iter_lines(chunk_size=1, decode_unicode=True):
                 if request_context:
@@ -131,13 +171,16 @@ class OpenAICompatibleProvider:
                     continue
                 data = line[5:].strip()
                 if data == "[DONE]":
+                    metadata["transport_end"] = "done"
                     return
                 try:
                     chunk = self._validate(json.loads(data), stream=True)
                 except json.JSONDecodeError as exc:
                     raise ProviderResponseError(tr("model_api_invalid_sse", data=data[:500])) from exc
                 self._record_usage(chunk, request_context)
+                self._capture_response_metadata(metadata, chunk)
                 yield chunk
+            metadata["transport_end"] = "eof"
 
     def list_models(self) -> list[str]:
         with self._request("GET", "models", timeout=15) as response:

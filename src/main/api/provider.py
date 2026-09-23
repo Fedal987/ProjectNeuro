@@ -5,9 +5,11 @@ from .exceptions import ProviderInterrupted
 
 
 class RequestContext:
-    def __init__(self, cancelled: Event, on_usage: Callable[[dict[str, Any]], None]) -> None:
+    def __init__(self, cancelled: Event, on_usage: Callable[[dict[str, Any]], None],
+                 on_response: Callable[[dict[str, Any]], None] | None = None) -> None:
         self.cancelled = cancelled
         self.on_usage = on_usage
+        self.on_response = on_response
         self._lock = Lock()
         self._close: Callable[[], None] | None = None
 

@@ -186,7 +186,10 @@ class LocalSessionStore:
             for key in ("reasoning_effort", "thinking", "reasoning_enabled"):
                 if key in p:
                     setattr(state, key, p[key])
-        elif event.type not in {"tool_call", "token_usage", "context_summary", "session_end", "session_deleted"}:
+        elif event.type not in {
+            "tool_call", "token_usage", "response_metadata", "context_summary",
+            "session_end", "session_deleted",
+        }:
             raise ValueError(f"Unsupported context event: {event.type}")
 
     def resume_session(self, session_id: str) -> ResumeState:

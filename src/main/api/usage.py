@@ -30,9 +30,15 @@ class UsageTracker:
         prompt_tokens = self._token_count(usage.get("prompt_tokens"))
         completion_tokens = self._token_count(usage.get("completion_tokens"))
         total_tokens = self._token_count(usage.get("total_tokens"))
+        prompt_details = usage.get("prompt_tokens_details")
+        if not isinstance(prompt_details, Mapping):
+            prompt_details = {}
         cached_tokens = min(
             prompt_tokens,
-            self._token_count(usage.get("prompt_cache_hit_tokens")),
+            max(
+                self._token_count(usage.get("prompt_cache_hit_tokens")),
+                self._token_count(prompt_details.get("cached_tokens")),
+            ),
         )
         if total_tokens == 0:
             total_tokens = prompt_tokens + completion_tokens
@@ -56,5 +62,4 @@ class UsageTracker:
             return max(0, int(value or 0))
         except (TypeError, ValueError):
             return 0
-
 

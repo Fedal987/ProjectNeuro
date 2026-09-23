@@ -685,7 +685,9 @@ def _run_cli(runtime):
             f"\n{tr('escape_interrupt_hint')}\n", "class:interrupt"
         ),
         lambda: session_manager.current_handler.interrupt(),
-        bottom_toolbar=lambda: build_bottom_toolbar(session_manager.current_handler),
+        bottom_toolbar=lambda: build_bottom_toolbar(
+            session_manager.current_handler_if_loaded, runtime=runtime,
+        ),
         history=session_manager.prompt_history,
         on_screen_enter=enter_screen,
         on_screen_exit=exit_screen,

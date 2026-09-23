@@ -27,7 +27,8 @@ class AgentContext:
         self._last_failed_call: str | None = None
         self._cancel_event = Event()
         self._request_context = RequestContext(
-            self._cancel_event, lambda usage: self._emit_event("token_usage", usage)
+            self._cancel_event, lambda usage: self._emit_event("token_usage", usage),
+            lambda metadata: self._emit_event("response_metadata", metadata),
         )
         self._interaction_paused: Callable[[], None] | None = None
         self._interaction_resumed: Callable[[], None] | None = None

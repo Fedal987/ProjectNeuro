@@ -119,6 +119,12 @@ class SessionManager:
         return self.current_session.handler
 
     @property
+    def current_handler_if_loaded(self) -> MessageHandler | None:
+        """Read a UI snapshot without loading a session or raising during transitions."""
+        session = self._sessions.get(self._current_name)
+        return session.handler if session is not None else None
+
+    @property
     def current_workspace(self) -> Path:
         return Path(self._workspace_provider()).expanduser().resolve()
 
@@ -160,11 +166,10 @@ class SessionManager:
             )
             if duplicate:
                 raise ValueError(tr("session_exists", name=session_name))
-        if replace_temporary:
-            self._discard_current_temporary()
+        temporary_name = self.current_name if replace_temporary else None
         if name is None:
-            session_name = self._normalise_name(self._next_name())
-        if session_name in self._sessions:
+            session_name = self._normalise_name(self._next_name(exclude=temporary_name))
+        if session_name in self._sessions and session_name != temporary_name:
             raise ValueError(tr("session_exists", name=session_name))
 
         new_session = Session(
@@ -174,12 +179,14 @@ class SessionManager:
             auto_name_pending=name is None if auto_name is None else auto_name,
             temporary=temporary,
         )
+        if save and not temporary:
+            self.save_session(new_session)
         self._sessions[session_name] = new_session
         if switch:
             self._current_name = session_name
+            if temporary_name is not None and temporary_name != session_name:
+                del self._sessions[temporary_name]
             self.prompt_history.select_current_session()
-        if save and not temporary:
-            self.save_session(new_session)
         return new_session
 
     def ensure_current_session(self) -> Session:
@@ -202,20 +209,17 @@ class SessionManager:
         workspace: str | Path | None = None,
     ) -> Session:
         name = self._resolve_target(target, workspace=workspace)
-        if (
-            self.has_current_session
-            and self.current_session.temporary
-            and self.current_name != name
-        ):
-            self._discard_current_temporary()
-        if self.has_current_session:
-            self.save_current_session()
         selected = self._sessions[name]
         self._ensure_handler(selected)
+        previous = self.current_session if self.has_current_session else None
+        if previous is not None and not previous.temporary:
+            self.save_current_session()
         selected.last_used_at = datetime.now()
-        self._current_name = name
-        self.prompt_history.select_current_session()
         self.save_session(selected)
+        self._current_name = selected.name
+        if previous is not None and previous.temporary and previous is not selected:
+            del self._sessions[previous.name]
+        self.prompt_history.select_current_session()
         return selected
 
     def select_session(
@@ -470,14 +474,6 @@ class SessionManager:
             temporary=True,
         )
 
-    def _discard_current_temporary(self) -> None:
-        if not self.has_current_session or not self.current_session.temporary:
-            return
-        temporary_name = self.current_session.name
-        del self._sessions[temporary_name]
-        self._current_name = None
-        self.prompt_history.select_current_session()
-
     def _rename_session(self, old_name: str, new_name: str) -> None:
         session = self._sessions[old_name]
         session.name = new_name
@@ -547,9 +543,9 @@ class SessionManager:
         title = re.sub(r"\s+", "-", title).strip(" .-")
         return title[:40] or None
 
-    def _next_name(self) -> str:
+    def _next_name(self, *, exclude: str | None = None) -> str:
         index = 1
-        while f"session-{index}" in self._sessions:
+        while f"session-{index}" in self._sessions and f"session-{index}" != exclude:
             index += 1
         return f"session-{index}"
 

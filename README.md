@@ -136,7 +136,7 @@ Step 3.1: 使用Python安装uv包管理器创建并激活虚拟环境
 
 ```bash
 sudo pacman -S uv
-cd neurocode-py
+cd ProjectNeuro
 uv venv
 source .venv\\bin\\activate.fish
 ```  

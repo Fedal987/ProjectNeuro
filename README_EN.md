@@ -62,7 +62,7 @@ If you are more comfortable with the command line or would like to contribute to
 Step 2.1: Clone the ProjectNeuro source code with Git.
 
 ```bash
-git clone https://github.com/Fedal987/neurocode-py.git
+git clone https://github.com/Fedal987/ProjectNeuro.git
 ```
 
 #### Step 3 — Configure the Environment
@@ -71,7 +71,7 @@ Step 3.1: Install the `uv` package manager with Python, then create and activate
 
 ```bash
 pip install uv
-cd neurocode-py
+cd ProjectNeuro
 uv venv
 .venv\\Scripts\\activate
 ```
@@ -127,7 +127,7 @@ sudo pacman -S python
 Step 2.1: Clone the ProjectNeuro source code with Git.
 
 ```bash
-git clone https://github.com/Fedal987/neurocode-py.git
+git clone https://github.com/Fedal987/ProjectNeuro.git
 ```
 
 #### Step 3 — Configure the Environment
@@ -136,7 +136,7 @@ Step 3.1: Install the `uv` package manager, then create and activate a virtual e
 
 ```bash
 sudo pacman -S uv
-cd neurocode-py
+cd ProjectNeuro
 uv venv
 source .venv\\bin\\activate.fish
 ```
@@ -199,26 +199,25 @@ If you prefer the convenience of a quick npm deployment, you will be able to use
 ## TODO List
 
 P0:
-
-- Fix the `NameError` in the streaming exception generator
-- Update the README
-- Move configuration loading out of the import phase
+- Unify the model provider implementation between Agent and api_manager
+- Fix sandbox security boundaries
+- Restore cross-platform subprocess output decoding
 
 P1:
-
-- Unify the two API implementations
-- Separate tool implementations from `Agent`
-- Merge the synchronous and streaming agent loops
-- Separate the terminal UI from the entry point
-- Fix translation issues
-- Split modules that have too many responsibilities
+- Refactor ToolRegistry into a tool object registration system
+- Merge synchronous and streaming loops
+- Use atomic writes for file modifications
+- Implement Plugin API
+- Implement Skill API
+- Split terminal_cli into smaller modules
+- Implement context compaction
 
 P2:
-
-- Improve `pyproject.toml` and the entry point
-- Add dependency locking and an automated release workflow
-- Complete `skills_handler` and `plugin_handler`
-- Add context compression
+- Migrate the src.main package to project_neuro
+- Add automated PyPI publishing
+- Implement Worker Mode
+- Expand MCP support
+- Try to bypass Anthropic's fuck Chinese(lol)
 
 ## Developers
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from src.main.ui.i18n import tr
 from .base import BaseTool, ToolError
@@ -9,9 +9,17 @@ from .base import BaseTool, ToolError
 class ApprovalPolicy(BaseTool):
     @staticmethod
     def _is_low_risk_command(arguments: list[str]) -> bool:
-        command = Path(arguments[0]).name
+        if not arguments:
+            return False
+        command = arguments[0]
+        # A workspace executable must not inherit a trusted utility's policy.
+        if Path(command).name != command or PureWindowsPath(command).name != command:
+            return False
         if any(
-            argument.startswith(("/", "~")) or ".." in Path(argument).parts
+            argument.startswith(("/", "~", "\\"))
+            or PureWindowsPath(argument).drive
+            or ".." in Path(argument).parts
+            or ".." in PureWindowsPath(argument).parts
             for argument in arguments[1:]
         ):
             return False
@@ -22,7 +30,6 @@ class ApprovalPolicy(BaseTool):
             "cut",
             "dirname",
             "du",
-            "file",
             "grep",
             "head",
             "id",
@@ -31,7 +38,6 @@ class ApprovalPolicy(BaseTool):
             "stat",
             "tail",
             "uname",
-            "uniq",
             "wc",
             "whoami",
         }:
@@ -40,23 +46,29 @@ class ApprovalPolicy(BaseTool):
         if command == "rg":
             return not any(
                 argument == "--pre" or argument.startswith("--pre=")
+                or argument.startswith("--hostname-bin")
                 for argument in arguments[1:]
             )
 
-        if command == "sed":
-            return not any(
-                argument == "-i"
-                or argument.startswith("-i")
-                or argument == "--in-place"
-                or argument.startswith("--in-place=")
-                for argument in arguments[1:]
-            )
+        # sed scripts can execute commands (e) and write files (w), including
+        # scripts loaded with -f. uniq accepts a positional output file, and
+        # file can invoke external decompressors. These require explicit approval.
+        if command in {"sed", "uniq", "file"}:
+            return False
 
         if command == "sort":
             return not any(
                 argument == "-o"
                 or argument.startswith("-o")
+                or argument == "--output"
                 or argument.startswith("--output=")
+                or (argument.startswith("--") and argument.split("=", 1)[0] not in {
+                    "--", "--reverse", "--numeric-sort", "--human-numeric-sort",
+                    "--general-numeric-sort", "--unique", "--stable", "--check",
+                    "--ignore-case", "--ignore-leading-blanks", "--version", "--help",
+                })
+                or (argument.startswith("-") and not argument.startswith("--")
+                    and "o" in argument[1:])
                 for argument in arguments[1:]
             )
 
@@ -81,7 +93,12 @@ class ApprovalPolicy(BaseTool):
             return (
                 read_only_subcommand
                 and not writes_output
-                and not unsafe_options.intersection(arguments[2:])
+                and not any(
+                    argument.split("=", 1)[0] in unsafe_options
+                    or argument.startswith("--open-files-in-pager")
+                    or (arguments[1] == "grep" and argument.startswith("-O"))
+                    for argument in arguments[2:]
+                )
             )
         return False
 

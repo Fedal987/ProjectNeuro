@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shlex
 import subprocess
+from pathlib import PureWindowsPath
 from src.main.ui.i18n import tr
 from src.main.encoding import decode_output
 from src.main.sandbox import NativeRunner, sandbox_runner
@@ -17,7 +18,13 @@ class CommandTool(BaseTool):
             raise ToolError(f"命令解析失败: {exc}") from exc
         if not arguments:
             raise ToolError("命令不能为空")
-        if not self.context.auto_approve and arguments[0] in {"rm", "sudo", "su", "shutdown", "reboot", "mkfs", "dd"}:
+        command_name = PureWindowsPath(arguments[0]).name.lower()
+        if command_name.endswith(".exe"):
+            command_name = command_name[:-4]
+        if not self.context.auto_approve and (
+            command_name in {"rm", "sudo", "su", "shutdown", "reboot", "mkfs", "dd"}
+            or command_name.startswith("mkfs.")
+        ):
             raise ToolError(f"出于安全原因不允许执行命令: {arguments[0]}")
         writable = not self.context.approval._is_low_risk_command(arguments)
         if not self.context.auto_approve and writable:

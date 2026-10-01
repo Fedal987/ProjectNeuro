@@ -196,28 +196,97 @@ uv run neuro.py
 > [!NOTE]  
 > npm部署仍然在开发计划中，暂未实装，请先使用源码部署的方式
 
-## TODO list:
+## TODO
 
-P0:
-- 统一agent与api_manager的模型provider实现
-- 修复沙箱安全边界
+### P0 — Stability
 
-P1:
-- 将toolregistry改为tool对象注册机制
-- 合并同步和流式loop
-- 文件修改使用atomic write
-- pluginapi
-- skillapi
-- 拆分 terminal_cli
-- 上下文压缩
+- [x] GitHub Actions CI
+- [x] Windows / Linux test matrix
+- [x] Python 3.10 / 3.11 / 3.12 test matrix
+- [ ] 修复当前 CI 失败项
+- [ ] 完善 Sandbox 回归测试
+- [ ] 增加 package build / import / compile checks
 
+### P1 — Core Architecture
 
-P2:
-- 将src.main包迁移为project_neuro
-- 自动发布PyPI
-- Worker Mode
-- MCP 扩展
-- 绕过Anthropic Fuck Chinese
+- [ ] ToolRegistry → Tool Object Registry
+- [ ] 合并 Sync / Streaming Agent Loop
+- [ ] 文件修改改为 Atomic Write
+- [ ] 拆分 `terminal_cli.py`
+- [ ] 拆分 `SessionManager`
+- [ ] 删除旧 `src/main/tool/` 兼容层
+- [ ] 统一异常与 i18n 错误信息
+
+### P1.5 — Agent Runtime
+
+- [ ] Context Compression
+- [ ] Structured Agent Events
+- [ ] Tool / Provider retry policy
+- [ ] 完善 command timeout 与子进程清理
+
+### P2 — Extension System
+
+- [ ] Plugin API
+- [ ] Skill API
+- [ ] 动态 Tool 注册
+- [ ] Plugin lifecycle / permissions / isolation
+- [ ] 统一 Built-in / Plugin / MCP Tool 接口
+
+### P2.5 — Packaging
+
+- [ ] `src.main` → `project_neuro`
+- [ ] 标准化 Python package layout
+- [ ] 统一 `pyproject.toml` / dependency management
+- [ ] 发布 PyPI
+- [ ] GitHub Actions 自动发布
+- [ ] Versioning / CHANGELOG / Release verification
+
+### P3 — MCP & Worker
+
+- [ ] MCP Client
+- [ ] MCP Tool discovery / registration
+- [ ] MCP lifecycle / permissions
+- [ ] Worker Mode
+- [ ] Task / Job abstraction
+- [ ] Background Worker
+- [ ] Task resume / checkpoint
+
+### P4 — Advanced Features
+
+- [ ] Parallel Tool Calls
+- [ ] Tool dependency scheduling
+- [ ] Multi-step task planning
+- [ ] Provider capability discovery
+- [ ] Multi-Provider fallback / routing
+- [ ] Agent tracing / observability
+- [ ] Session fork / export / import
+- [ ] 绕过Anthropic Fuck Chinese
+
+### Long-Term
+
+- [ ] Remote Worker
+- [ ] Remote Tool Execution
+- [ ] Plugin Registry / Marketplace
+- [ ] Windows native OS-level Sandbox
+- [ ] macOS Sandbox
+- [ ] Execution metrics / debug UI
+
+---
+
+## Completed
+
+- [x] ModelProvider-based Provider architecture
+- [x] OpenAI-Compatible Provider
+- [x] JSONL + SQLite Session Storage
+- [x] Cross-platform subprocess decoding
+- [x] Linux Bubblewrap Sandbox
+- [x] Sandbox HOME / TMP / environment isolation
+- [x] Linux network isolation
+- [x] Full Control Mode native execution
+- [x] Command security policy hardening
+- [x] Tool Call ID compatibility
+- [x] Optional Temperature / Stream Usage capability
+
 
 ## 开发人员名单
 

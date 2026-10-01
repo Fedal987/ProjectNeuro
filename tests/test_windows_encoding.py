@@ -16,7 +16,10 @@ from src.main.tools.base import ToolError
 
 class WindowsEncodingTests(unittest.TestCase):
     def setUp(self):
-        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        # self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        self.root = Path(temp_dir.name)
         self.agent = Agent(provider=OpenAICompatibleProvider(api_key='test', base_url='https://example.invalid/v1', usage_tracker=UsageTracker()), workspace=self.root, system_prompt='test',
                            model='test', auto_approve=True)
         self.addCleanup(self.agent.provider.session.close)

@@ -7,7 +7,10 @@ from src.main.session import LocalSessionStore, SessionEvent
 
 class SessionDiagnosticsTests(unittest.TestCase):
     def setUp(self):
-        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        # self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        self.root = Path(temp_dir.name)
         self.store = LocalSessionStore(self.root)
         self.addCleanup(lambda: self.store.close())
         self.messages = [{'role': 'system', 'content': 'test'},

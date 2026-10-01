@@ -13,7 +13,10 @@ from src.main.tool.toolcall_utils import Agent as LegacyAgent
 
 class AgentToolsTests(unittest.TestCase):
     def setUp(self):
-        self.workspace = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        # self.workspace = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        self.workspace = Path(temp_dir.name)
         self.agent = Agent(provider=OpenAICompatibleProvider(api_key='test', base_url='https://example.invalid/v1', usage_tracker=UsageTracker()), workspace=self.workspace,
                            system_prompt='Test', model='test',
                            confirm=Mock(return_value=True))

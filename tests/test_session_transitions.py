@@ -13,7 +13,10 @@ from src.main.ui.terminal_cli import build_bottom_toolbar
 
 class SessionTransitionTests(unittest.TestCase):
     def setUp(self):
-        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        # self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        self.root = Path(temp_dir.name)
         self.runtime = create_runtime(
             AppConfig(APIConfig('https://example.invalid/v1', 'test', 'test-model')),
             provider=Mock(),

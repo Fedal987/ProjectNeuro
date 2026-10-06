@@ -1,15 +1,17 @@
 import json
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any
 
 import requests
 
 from src.main.ui.i18n import tr
+
 from .exceptions import ProviderConnectionError, ProviderResponseError
 from .provider import RequestContext
+from .tool_id_compat import retry_messages
 from .transform import RequestTransform, resolve_provider
 from .usage import UsageTracker
-from .tool_id_compat import retry_messages
 
 
 class OpenAICompatibleProvider:

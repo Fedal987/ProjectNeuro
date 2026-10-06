@@ -1,11 +1,10 @@
-from dataclasses import replace
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import textwrap
-from types import SimpleNamespace
 import unittest
+from dataclasses import replace
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from src.main.api import api_manager

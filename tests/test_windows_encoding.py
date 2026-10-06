@@ -1,16 +1,21 @@
 import codecs
-from io import BytesIO, StringIO, TextIOWrapper
-from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from io import BytesIO, StringIO, TextIOWrapper
+from pathlib import Path
 from unittest.mock import patch
 
 from src.main.agent.agent import Agent
 from src.main.api.openai_compatible import OpenAICompatibleProvider
 from src.main.api.usage import UsageTracker
 from src.main.config import load_config
-from src.main.encoding import configure_terminal_encoding, decode_output, decode_text, encode_text
+from src.main.encoding import (
+    configure_terminal_encoding,
+    decode_output,
+    decode_text,
+    encode_text,
+)
 from src.main.tools.base import ToolError
 
 

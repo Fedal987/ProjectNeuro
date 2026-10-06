@@ -24,4 +24,4 @@ def sandbox_runner() -> SandboxRunner:
     return FallbackRunner()
 
 
-__all__ = ["CommandResult", "SandboxRunner", "NativeRunner", "sandbox_runner"]
+__all__ = ["CommandResult", "NativeRunner", "SandboxRunner", "sandbox_runner"]

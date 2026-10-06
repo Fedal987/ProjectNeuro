@@ -4,6 +4,7 @@ import os
 from dataclasses import asdict
 from pathlib import Path
 from uuid import UUID, uuid4
+
 from .models import SessionEvent
 
 

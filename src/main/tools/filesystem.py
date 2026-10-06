@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from src.main.ui.i18n import tr
+
 from src.main.encoding import encode_text, read_text_file
+from src.main.ui.i18n import tr
 
 from .base import BaseTool, ToolError
 

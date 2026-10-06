@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
-from src.main.api.provider import ModelProvider
 from src.main.api.exceptions import ProviderInterrupted
-
-from src.main.ui.i18n import tr
+from src.main.api.provider import ModelProvider
 from src.main.tools.approval import ApprovalPolicy
 from src.main.tools.dispatcher import ToolDispatcher
 from src.main.tools.registry import build_tool_definitions, build_tool_handlers
+from src.main.ui.i18n import tr
+
 from .context import AgentContext
 from .exceptions import ConversationInterrupted
 from .loop import AgentLoop

@@ -1,5 +1,6 @@
 """Offline index maintenance: python -m src.main.session rebuild-index."""
 import argparse
+
 from .local_store import LocalSessionStore
 
 

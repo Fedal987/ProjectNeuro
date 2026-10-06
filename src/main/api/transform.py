@@ -1,10 +1,10 @@
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import fields
-from typing import Any, Mapping
+from typing import Any
 from urllib.parse import urlsplit
 
 from src.main.model_config import ModelCapabilities, ModelOptions
-
 
 PROVIDER_DEFAULTS: dict[str, ModelOptions] = {
     "openai_compatible": ModelOptions(thinking_format="none"),

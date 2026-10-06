@@ -36,10 +36,9 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.text import Text
 
-from src.main.ui.i18n import LANGUAGE_NAMES, get_language, set_language, tr
 from src.main.agent.context import get_current_path
 from src.main.encoding import configure_terminal_encoding
-from src.main.api.usage import UsageSnapshot, UsageTracker
+from src.main.ui.i18n import LANGUAGE_NAMES, get_language, set_language, tr
 
 
 class DoubleEscapeDetector:
@@ -678,8 +677,9 @@ def main(config_path=None):
 
 def _run_cli(runtime):
     from functools import partial
-    from src.main.msg.message_handler import MessageHandler
+
     from src.main.msg.command_utils import CommandManager
+    from src.main.msg.message_handler import MessageHandler
     from src.main.msg.session_manager import SessionManager
 
     session_manager = SessionManager(session_factory=lambda: MessageHandler(runtime=runtime))

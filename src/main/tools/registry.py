@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from .base import tool_definition
 from .command import CommandTool
 from .filesystem import FilesystemTools
 from .search import SearchTools
-
 
 if TYPE_CHECKING:
     from src.main.agent.agent import Agent

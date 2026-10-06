@@ -5,7 +5,6 @@ import locale
 import os
 from pathlib import Path
 
-
 I18N_DIR = Path(__file__).with_name("i18n")
 DEFAULT_LANGUAGE = "en"
 SUPPORTED_LANGUAGES = {"zh_CN", "zh_TW", "ja", "en", "fr", "de", "pt", "ru"}

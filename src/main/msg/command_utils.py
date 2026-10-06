@@ -1,9 +1,12 @@
 
 from __future__ import annotations
+
 from collections.abc import Callable
+
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
+
 from src.main.api.exceptions import ProviderError
 from src.main.msg.session_manager import SessionManager
 

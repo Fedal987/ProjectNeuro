@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping, Protocol
+from typing import Protocol
 
 CommandResult = subprocess.CompletedProcess[bytes]
 

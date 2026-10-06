@@ -1,8 +1,9 @@
 """Application settings. Importing this module never reads configuration files."""
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from math import isfinite
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 from urllib.parse import urlsplit
 
 from src.main.encoding import read_text_file

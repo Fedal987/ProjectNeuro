@@ -8,18 +8,19 @@
 from __future__ import annotations
 
 import copy
-from uuid import uuid4
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from uuid import uuid4
 
 from prompt_toolkit.history import History
-from src.main.ui.i18n import tr
-from src.main.session import LocalSessionStore, SessionStore, SessionEvent
+
+from src.main.session import LocalSessionStore, SessionEvent, SessionStore
 from src.main.session.migration import import_legacy
+from src.main.ui.i18n import tr
 
 if TYPE_CHECKING:
     from src.main.msg.message_handler import MessageHandler

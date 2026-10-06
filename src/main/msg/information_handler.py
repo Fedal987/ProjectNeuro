@@ -5,11 +5,13 @@
     GitHub: https://github.com/Fedal987/neurocode-py
 """
 
-import time
-import requests
-import socket
 import platform
+import socket
+import time
+
 import psutil
+import requests
+
 from src.main.ui.i18n import tr
 
 

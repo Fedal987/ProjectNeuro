@@ -1,11 +1,10 @@
 """Explicit API runtime initialization; importing this module performs no I/O."""
 from dataclasses import dataclass, field
 
-from src.main.api.provider import ModelProvider
 from src.main.api.factory import create_provider
-
-from src.main.config import AppConfig, load_config
+from src.main.api.provider import ModelProvider
 from src.main.api.usage import UsageTracker
+from src.main.config import AppConfig, load_config
 
 
 @dataclass

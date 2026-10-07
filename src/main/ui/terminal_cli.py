@@ -37,6 +37,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 from src.main.ui.i18n import LANGUAGE_NAMES, get_language, set_language, tr
+from src.main.ui.widths import calibrate_console_widths
 from src.main.agent.context import get_current_path
 from src.main.encoding import configure_terminal_encoding
 from src.main.api.usage import UsageSnapshot, UsageTracker
@@ -166,6 +167,24 @@ class ConversationInput:
             self._transcript = ""
             self._blocks.clear()
         self._publish_update(wait=False)
+
+    def replace_output(self, text: str) -> None:
+        """Replace the whole transcript with ``text``.
+
+        Used when output has to supersede what is on screen instead of being
+        appended below it, as when switching language redraws the welcome panel.
+
+        Clearing and appending happen under one lock: a response thread appending
+        in between would otherwise have its output discarded, or land above the
+        panel this call is meant to install.
+        """
+        self.finalize_markdown()
+        with self._transcript_lock:
+            self._transcript = text
+            self._blocks.clear()
+            if text:
+                self._blocks.append({"kind": "plain", "style": "", "text": text})
+        self._publish_update()
 
     def start(self) -> None:
         if self._thread is not None:
@@ -632,12 +651,17 @@ def build_bottom_toolbar(handler=None, *, runtime=None) -> str:
     )
 
 
-def render_welcome(*, runtime=None) -> None:
-    """Clear the terminal and redraw the startup panel in the active language."""
+def render_welcome(*, runtime=None, target: Console | None = None) -> None:
+    """Draw the startup panel in the active language.
+
+    The panel is only rendered; it deliberately does not clear the screen. On the
+    alternate screen a captured ``ESC[2J`` is dropped by prompt_toolkit's ANSI
+    parser, so callers decide whether to replace or append the transcript.
+    """
     from src.main.api.api_manager import get_runtime
     config = (runtime if runtime is not None else get_runtime()).config
 
-    console.clear()
+    sink = console if target is None else target
     content = (
         f"[cyan]{LOGO}[/cyan]\n\n{tr('tagline')}\n"
         f"{tr('help_hint')}\n\n\n"
@@ -645,8 +669,27 @@ def render_welcome(*, runtime=None) -> None:
         f"{tr('model')}: {config.api.model}\n"
         f"{tr('current_dir')}: {get_current_path()}\n"
     )
-    console.print(Panel.fit(content, border_style="cyan"))
-    console.print()
+    sink.print(Panel.fit(content, border_style="cyan"))
+    sink.print()
+
+
+def render_welcome_text(*, runtime=None) -> str:
+    """Render the welcome panel to a string.
+
+    A dedicated renderer is used rather than a capture on the shared console:
+    ``Console.capture`` renders and clears the console's whole buffer, so a
+    capture nested inside another one would swallow output that belongs to the
+    surrounding command.
+    """
+    target = StringIO()
+    renderer = Console(
+        file=target,
+        force_terminal=True,
+        color_system="truecolor",
+        width=console.width,
+    )
+    render_welcome(runtime=runtime, target=renderer)
+    return target.getvalue()
 
 
 def build_exit_message(*, runtime=None) -> str:
@@ -663,6 +706,10 @@ def build_exit_message(*, runtime=None) -> str:
 
 def main(config_path=None):
     configure_terminal_encoding()
+    # Align the layout libraries with the console before anything is measured or
+    # drawn: on a CJK console some characters are wider than rich and
+    # prompt_toolkit assume, which misaligns every translated line.
+    calibrate_console_widths()
     from src.main.api.api_manager import initialize
     from src.main.config import load_config
 
@@ -683,6 +730,16 @@ def _run_cli(runtime):
     from src.main.msg.session_manager import SessionManager
 
     session_manager = SessionManager(session_factory=lambda: MessageHandler(runtime=runtime))
+
+    def redraw_welcome() -> None:
+        """Redraw the welcome panel in place after a language change.
+
+        The panel replaces the transcript instead of being appended below it:
+        a captured clear-screen sequence does not survive prompt_toolkit's ANSI
+        parsing, so appending would stack one panel per language switch.
+        """
+        conversation_input.replace_output(render_welcome_text(runtime=runtime))
+
     command_manager = CommandManager(
         console,
         session_manager,
@@ -690,7 +747,7 @@ def _run_cli(runtime):
         language_getter=get_language,
         language_setter=set_language,
         language_names=LANGUAGE_NAMES,
-        language_changed_callback=partial(render_welcome, runtime=runtime),
+        language_changed_callback=redraw_welcome,
         exit_message_getter=partial(build_exit_message, runtime=runtime),
     )
     keyboard_protocol = None

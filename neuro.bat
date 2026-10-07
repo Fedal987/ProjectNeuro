@@ -1,4 +1,4 @@
 @echo off
-title Neuro-CLI
-uv run ./neuro.py
+title ProjectNeuro
+uv run D:\ProjectNeuro\neuro.py
 pause

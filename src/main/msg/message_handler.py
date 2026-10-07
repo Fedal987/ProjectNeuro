@@ -6,11 +6,16 @@
 """
 
 from pathlib import Path
-from src.main.ui.i18n import tr
 
 from src.main.api.api_manager import APIRuntime, get_runtime
-from src.main.prompt.non_reasoning_prompt import build_prompt, create_agent as create_non_reasoning_agent
-from src.main.prompt.reasoning_prompt import SYSTEM_PROMPT as REASONING_PROMPT, create_agent as create_reasoning_agent
+from src.main.prompt.non_reasoning_prompt import build_prompt
+from src.main.prompt.non_reasoning_prompt import (
+    create_agent as create_non_reasoning_agent,
+)
+from src.main.prompt.reasoning_prompt import SYSTEM_PROMPT as REASONING_PROMPT
+from src.main.prompt.reasoning_prompt import create_agent as create_reasoning_agent
+from src.main.ui.i18n import tr
+
 
 class MessageHandler:
     REASONING_LEVELS = ("default", "minimal", "low", "medium", "high", "xhigh", "max")

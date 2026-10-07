@@ -1,16 +1,19 @@
-from io import BytesIO
 import json
+import unittest
+from io import BytesIO
 from pathlib import Path
 from threading import Event, Thread
 from types import SimpleNamespace
-import unittest
 from unittest.mock import Mock, patch
 
 import requests
 
 from src.main.agent.agent import Agent
 from src.main.api.api_manager import create_runtime, get_completion, list_models
-from src.main.api.exceptions import ProviderConnectionError, ProviderError, ProviderResponseError
+from src.main.api.exceptions import (
+    ProviderConnectionError,
+    ProviderResponseError,
+)
 from src.main.api.openai_compatible import OpenAICompatibleProvider
 from src.main.api.usage import UsageTracker
 from src.main.config import APIConfig, AppConfig

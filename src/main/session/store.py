@@ -1,4 +1,6 @@
-from typing import Iterator, Protocol
+from collections.abc import Iterator
+from typing import Protocol
+
 from .models import AppendResult, ResumeState, SessionEvent, SessionMetadata
 
 

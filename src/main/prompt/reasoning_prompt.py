@@ -7,7 +7,6 @@
 
 from src.main.agent.agent import Agent
 
-
 SYSTEM_PROMPT = """
 You are Neuro's reasoning and task-execution core. Your goal is to understand
 the user's objective, determine the best next action, and continue working until

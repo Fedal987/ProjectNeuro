@@ -5,11 +5,12 @@ simple, predictable local durability over concurrent writers to many sessions.
 """
 import copy
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
 from threading import RLock
-from typing import Any, Iterator
+from typing import Any
 from uuid import uuid4
 
 from .jsonl_store import JsonlEventStore
@@ -43,13 +44,12 @@ class LocalSessionStore:
 
     @contextmanager
     def _locked(self):
-        with self._mutex:
-            with (self.directory / ".store.lock").open("a+b") as lock:
-                lock_file(lock)
-                try:
-                    yield
-                finally:
-                    unlock_file(lock)
+        with self._mutex, (self.directory / ".store.lock").open("a+b") as lock:
+            lock_file(lock)
+            try:
+                yield
+            finally:
+                unlock_file(lock)
 
     def close(self):
         with self._locked():

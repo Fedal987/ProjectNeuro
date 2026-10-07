@@ -1,10 +1,11 @@
+import unittest
 from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
-import unittest
 from unittest.mock import Mock
 
 from rich.console import Console
+
 from src.main.msg.command_utils import CommandManager
 from src.main.ui.i18n import tr
 

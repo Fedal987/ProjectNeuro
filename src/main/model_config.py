@@ -1,7 +1,8 @@
+import json
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass, field, fields
-import json
-from typing import Any, Mapping
+from typing import Any
 
 
 @dataclass(frozen=True)

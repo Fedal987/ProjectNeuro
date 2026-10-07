@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import codecs
 import locale
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 def decode_text(data: bytes) -> tuple[str, str]:

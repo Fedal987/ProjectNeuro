@@ -1,7 +1,7 @@
 """Narrow workaround for gateways confusing Responses item IDs with call IDs."""
+import re
 from copy import deepcopy
 from hashlib import sha256
-import re
 from typing import Any
 
 

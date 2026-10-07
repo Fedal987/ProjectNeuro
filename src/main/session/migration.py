@@ -1,6 +1,7 @@
 """Idempotent, non-destructive import of legacy snapshot files."""
 import json
 from uuid import NAMESPACE_URL, uuid5
+
 from .models import now
 
 

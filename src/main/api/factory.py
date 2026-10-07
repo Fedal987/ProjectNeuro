@@ -1,6 +1,7 @@
-from typing import Callable
+from collections.abc import Callable
 
 from src.main.config import APIConfig
+
 from .openai_compatible import OpenAICompatibleProvider
 from .provider import ModelProvider
 from .transform import RequestTransform, resolve_provider

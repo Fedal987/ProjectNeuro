@@ -1,16 +1,15 @@
+import unittest
 from io import StringIO
 from types import SimpleNamespace
-import unittest
 from unittest.mock import Mock, patch
-
-from src.main.api.exceptions import ProviderConnectionError
 
 from rich.console import Console
 
+from src.main.api.api_manager import create_runtime
+from src.main.api.exceptions import ProviderConnectionError
+from src.main.config import APIConfig, AppConfig
 from src.main.msg.command_utils import CommandManager
 from src.main.msg.message_handler import MessageHandler
-from src.main.api.api_manager import create_runtime
-from src.main.config import APIConfig, AppConfig
 from src.main.ui.i18n import tr
 from src.main.ui.terminal_cli import build_bottom_toolbar
 

@@ -1,7 +1,7 @@
-from io import BytesIO
 import json
-from pathlib import Path
 import unittest
+from io import BytesIO
+from pathlib import Path
 from unittest.mock import patch
 
 import requests

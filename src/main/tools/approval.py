@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path, PureWindowsPath
 
 from src.main.ui.i18n import tr
+
 from .base import BaseTool, ToolError
 
 

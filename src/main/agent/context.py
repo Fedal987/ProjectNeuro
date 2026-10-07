@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import os
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Event, Lock
-from typing import Any, Callable
+from typing import Any
 
 from src.main.api.provider import RequestContext
 

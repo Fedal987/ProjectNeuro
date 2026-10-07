@@ -1,7 +1,8 @@
 """Thread-safe usage accounting, independent of configuration and UI."""
+from collections.abc import Mapping
 from dataclasses import dataclass
 from threading import Lock
-from typing import Any, Mapping
+from typing import Any
 
 
 @dataclass(frozen=True)

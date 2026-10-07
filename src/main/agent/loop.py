@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.main.ui.i18n import tr
 from src.main.api.exceptions import ProviderError
+from src.main.ui.i18n import tr
+
 from .context import StreamEvent
 from .exceptions import ConversationInterrupted
 

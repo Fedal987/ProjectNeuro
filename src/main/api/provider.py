@@ -1,5 +1,6 @@
+from collections.abc import Callable, Iterator
 from threading import Event, Lock
-from typing import Any, Callable, Iterator, Protocol
+from typing import Any, Protocol
 
 from .exceptions import ProviderInterrupted
 

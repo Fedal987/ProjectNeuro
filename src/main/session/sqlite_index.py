@@ -1,6 +1,7 @@
 """Rebuildable metadata and byte offsets; never stores message bodies."""
 import sqlite3
 from pathlib import Path
+
 from .models import SessionMetadata
 
 SCHEMA = """

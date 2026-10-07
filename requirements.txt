@@ -1,6 +1,5 @@
 prompt-toolkit~=3.0.52
 pygments~=2.20.0
-rich~=15.0.0
 tomli~=2.4.1
 requests~=2.34.2
 psutil~=7.2.2

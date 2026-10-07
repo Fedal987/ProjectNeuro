@@ -3,9 +3,10 @@ from __future__ import annotations
 import shlex
 import subprocess
 from pathlib import PureWindowsPath
-from src.main.ui.i18n import tr
+
 from src.main.encoding import decode_output
 from src.main.sandbox import NativeRunner, sandbox_runner
+from src.main.ui.i18n import tr
 
 from .base import BaseTool, ToolError
 
@@ -19,8 +20,7 @@ class CommandTool(BaseTool):
         if not arguments:
             raise ToolError("命令不能为空")
         command_name = PureWindowsPath(arguments[0]).name.lower()
-        if command_name.endswith(".exe"):
-            command_name = command_name[:-4]
+        command_name = command_name.removesuffix(".exe")
         if not self.context.auto_approve and (
             command_name in {"rm", "sudo", "su", "shutdown", "reboot", "mkfs", "dd"}
             or command_name.startswith("mkfs.")

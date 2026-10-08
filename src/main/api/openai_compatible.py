@@ -1,3 +1,10 @@
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import json
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -104,7 +111,6 @@ class OpenAICompatibleProvider:
     @contextmanager
     def _response_diagnostics(self, response: requests.Response,
                               context: RequestContext | None, *, stream: bool):
-        # Persist only an allowlist, never headers, credentials, or request bodies.
         metadata: dict[str, Any] = {
             "stream": stream, "transport_end": "consumer_closed", "finish_reasons": [],
         }
@@ -183,7 +189,6 @@ class OpenAICompatibleProvider:
                 yield chunk
             return
         except ProviderResponseError as exc:
-            # Never replay a stream after delivering content or tool calls.
             compatible = None if emitted else retry_messages(messages, exc)
             if compatible is None:
                 raise

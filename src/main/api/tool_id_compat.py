@@ -1,4 +1,10 @@
-"""Narrow workaround for gateways confusing Responses item IDs with call IDs."""
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import re
 from copy import deepcopy
 from hashlib import sha256
@@ -22,7 +28,6 @@ def retry_messages(messages: list[dict[str, Any]], error: Exception) -> list[dic
     for call_id in sorted(ids):
         if call_id.startswith('fc_'):
             continue
-        # Avoid collisions with existing IDs and preserve call/result pairing.
         candidate = 'fc_' + sha256(call_id.encode()).hexdigest()[:32]
         while candidate in ids or candidate in mapping.values():
             candidate = 'fc_' + sha256(candidate.encode()).hexdigest()[:32]

@@ -1,8 +1,8 @@
 """
-    Neuro-cli
+    ProjectNeuro
     author@Fedal987
     Powered by HeronStudio
-    GitHub: https://github.com/Fedal987/neuro-cli-py
+    GitHub: https://github.com/Fedal987/ProjectNeuro
 """
 
 from __future__ import annotations
@@ -58,7 +58,6 @@ class DoubleEscapeDetector:
 
 
 class _ScreenOutput:
-    """Apply keyboard modes to the alternate screen, where input is read."""
 
     def __init__(self, output, on_enter, on_exit):
         self.output = output
@@ -123,7 +122,6 @@ class ConversationInput:
         self._rendered_revision = 0
 
     def read_input(self) -> str:
-        """Wait for input without leaving or rebuilding the full-screen UI."""
         self.finish_response()
         if self._thread_error is not None:
             raise self._thread_error
@@ -168,15 +166,6 @@ class ConversationInput:
         self._publish_update(wait=False)
 
     def replace_output(self, text: str) -> None:
-        """Replace the whole transcript with ``text``.
-
-        Used when output has to supersede what is on screen instead of being
-        appended below it, as when switching language redraws the welcome panel.
-
-        Clearing and appending happen under one lock: a response thread appending
-        in between would otherwise have its output discarded, or land above the
-        panel this call is meant to install.
-        """
         self.finalize_markdown()
         with self._transcript_lock:
             self._transcript = text
@@ -350,7 +339,6 @@ class ConversationInput:
                 "class:reasoning-title",
                 f"\nNeuro Working... ({minutes}m/{seconds}s)\n",
             ))
-        # Keep the scroll target in the same snapshot as the rendered lines.
         fragments.append(("[SetCursorPosition]", ""))
         return FormattedText(fragments)
 
@@ -651,12 +639,6 @@ def build_bottom_toolbar(handler=None, *, runtime=None) -> str:
 
 
 def render_welcome(*, runtime=None, target: Console | None = None) -> None:
-    """Draw the startup panel in the active language.
-
-    The panel is only rendered; it deliberately does not clear the screen. On the
-    alternate screen a captured ``ESC[2J`` is dropped by prompt_toolkit's ANSI
-    parser, so callers decide whether to replace or append the transcript.
-    """
     from src.main.api.api_manager import get_runtime
     config = (runtime if runtime is not None else get_runtime()).config
 
@@ -673,13 +655,6 @@ def render_welcome(*, runtime=None, target: Console | None = None) -> None:
 
 
 def render_welcome_text(*, runtime=None) -> str:
-    """Render the welcome panel to a string.
-
-    A dedicated renderer is used rather than a capture on the shared console:
-    ``Console.capture`` renders and clears the console's whole buffer, so a
-    capture nested inside another one would swallow output that belongs to the
-    surrounding command.
-    """
     target = StringIO()
     renderer = Console(
         file=target,
@@ -705,9 +680,6 @@ def build_exit_message(*, runtime=None) -> str:
 
 def main(config_path=None):
     configure_terminal_encoding()
-    # Align the layout libraries with the console before anything is measured or
-    # drawn: on a CJK console some characters are wider than rich and
-    # prompt_toolkit assume, which misaligns every translated line.
     calibrate_console_widths()
     from src.main.api.api_manager import initialize
     from src.main.config import load_config
@@ -732,12 +704,6 @@ def _run_cli(runtime):
     session_manager = SessionManager(session_factory=lambda: MessageHandler(runtime=runtime))
 
     def redraw_welcome() -> None:
-        """Redraw the welcome panel in place after a language change.
-
-        The panel replaces the transcript instead of being appended below it:
-        a captured clear-screen sequence does not survive prompt_toolkit's ANSI
-        parsing, so appending would stack one panel per language switch.
-        """
         conversation_input.replace_output(render_welcome_text(runtime=runtime))
 
     command_manager = CommandManager(

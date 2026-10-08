@@ -1,4 +1,10 @@
-"""Advisory local file locks using standard-library platform primitives."""
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import os
 
 if os.name == "nt":

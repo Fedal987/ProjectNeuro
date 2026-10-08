@@ -1,8 +1,8 @@
 """
-    NeuroCode
+    ProjectNeuro
     author@Fedal987
     Powered by HeronStudio
-    08/17/2026  Ij1chi-Nijika
+    GitHub: https://github.com/Fedal987/ProjectNeuro
 """
 
 from __future__ import annotations
@@ -121,7 +121,6 @@ class SessionManager:
 
     @property
     def current_handler_if_loaded(self) -> MessageHandler | None:
-        """Read a UI snapshot without loading a session or raising during transitions."""
         session = self._sessions.get(self._current_name)
         return session.handler if session is not None else None
 
@@ -279,7 +278,7 @@ class SessionManager:
         try:
             generated = self._name_generator(session.handler.history)
             title = self._clean_generated_name(generated)
-        except Exception as exc:  # Naming must never interrupt the conversation.
+        except Exception as exc:
             self.naming_errors.append(str(exc))
             return None
         if not title:
@@ -399,7 +398,6 @@ class SessionManager:
         history = session.handler.history
         count = len(session.persisted_messages)
         if history[:count] != session.persisted_messages:
-            # Reset or a caller replacing context creates a new recovery boundary.
             self._emit(session, "context_reset", self._snapshot(session))
             session.persisted_messages = copy.deepcopy(history)
             session.persisted_inputs = len(session.input_history)
@@ -436,7 +434,6 @@ class SessionManager:
 
     def _load_sessions(self) -> None:
         for item in self.store.list_sessions(limit=None):
-            # Titles remain compatible with name-based CLI selection.
             name = self._unique_name(item.title)
             self._sessions[name] = Session(
                 name=name, handler=None, session_id=item.session_id,

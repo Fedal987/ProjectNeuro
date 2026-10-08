@@ -1,3 +1,10 @@
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -27,7 +34,6 @@ class BubblewrapRunner:
             "--chdir", "/workspace", "--", *args,
         ])
         env = safe_environment()
-        # Host PATH may reference private directories or workspace executables.
         env.update(PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
                    HOME="/home/sandbox", TMPDIR="/tmp", TMP="/tmp", TEMP="/tmp")
         return execute(command, workspace=workspace, timeout=timeout, env=env)

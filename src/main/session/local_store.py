@@ -1,8 +1,10 @@
-"""Local source-of-truth event log with a disposable SQLite projection.
-
-A store-wide advisory lock serializes processes as well as rebuilds. This favors
-simple, predictable local durability over concurrent writers to many sessions.
 """
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import copy
 import sqlite3
 from collections.abc import Iterator
@@ -37,8 +39,6 @@ class LocalSessionStore:
 
     def _open_index(self):
         with self._locked():
-            # Do not silently replace a corrupt database; the explicit rebuild
-            # command can repair it while retaining a diagnostic copy.
             self.index = SQLiteSessionIndex(self.directory / "index.sqlite3")
             self._reconcile_all()
 
@@ -95,7 +95,6 @@ class LocalSessionStore:
                 self.index.apply(event, start, end, self.events.path(session_id))
             except sqlite3.Error as exc:
                 self.errors.append(f"Created {session_id}; index pending: {exc}")
-                # Metadata is derivable without making the caller retry creation.
                 return SessionMetadata(session_id, title, payload["workspace"], model,
                                        payload.get("created_at", event.timestamp), event.timestamp,
                                        str(self.events.path(session_id)), last_seq=1,
@@ -143,7 +142,6 @@ class LocalSessionStore:
             return self.index.list(workspace=workspace, query=query, archived=archived, limit=limit)
 
     def load_events(self, session_id: str, *, after_event_id: str | None = None) -> Iterator[SessionEvent]:
-        # Capture a committed prefix, then release the writer lock before yielding.
         with self._locked():
             self._sync(session_id)
             offset = 0
@@ -162,7 +160,6 @@ class LocalSessionStore:
         self.append_event(SessionEvent(session_id, "session_metadata_updated", {"archived": archived}))
 
     def delete_session(self, session_id: str) -> None:
-        """Logical deletion; retains history and fork provenance for recovery."""
         self.append_event(SessionEvent(session_id, "session_deleted", {}))
 
     @staticmethod
@@ -206,7 +203,6 @@ class LocalSessionStore:
             return state
 
     def fork_session(self, session_id: str, *, at_event_id: str, title: str) -> SessionMetadata:
-        # Full replay up to the selected event is only needed for arbitrary historical forks.
         metadata = self.get_session(session_id)
         state = ResumeState(metadata)
         found = False
@@ -235,7 +231,6 @@ class LocalSessionStore:
                                    reasoning_enabled=state.reasoning_enabled, auto_name_pending=False)
 
     def rebuild_index(self):
-        """Rebuild in place under the writer lock; never swaps a live WAL database."""
         with self._locked():
             with self.index.connection:
                 self.index.connection.execute("DELETE FROM event_offsets")
@@ -246,11 +241,6 @@ class LocalSessionStore:
 
     @classmethod
     def rebuild_from_disk(cls, directory):
-        """Offline repair, including corrupt SQLite. Refuse while a store is open.
-
-        Keep the previous database and WAL sidecars in a diagnostic directory.
-        No live connection is ever redirected to a replacement database.
-        """
         root = Path(directory).expanduser().resolve()
         root.mkdir(parents=True, exist_ok=True)
         with (root / ".lifetime.lock").open("a+b") as lifetime:
@@ -268,8 +258,6 @@ class LocalSessionStore:
                             path = root / name
                             if path.exists():
                                 path.replace(backup / name)
-                        # Construct the projection directly while the exclusive lifetime
-                        # lock prevents every runtime from opening a connection.
                         instance = object.__new__(cls)
                         instance.directory = root
                         instance.events = JsonlEventStore(root / "rollouts")

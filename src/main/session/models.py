@@ -1,4 +1,10 @@
-"""Versioned persistence values, independent of the agent and UI."""
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any

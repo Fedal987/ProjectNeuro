@@ -1,4 +1,10 @@
-"""Idempotent, non-destructive import of legacy snapshot files."""
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import json
 from uuid import NAMESPACE_URL, uuid5
 
@@ -9,7 +15,6 @@ def import_legacy(store, directory):
     errors = []
     for path in sorted(directory.glob("*.session")):
         try:
-            # Identity follows source path, not mutable snapshot contents.
             session_id = str(uuid5(NAMESPACE_URL, path.resolve().as_uri()))
             if store.events.path(session_id).exists():
                 continue

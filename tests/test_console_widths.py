@@ -1,4 +1,9 @@
-"""Console width calibration and language-switch redraw tests."""
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
 
 from __future__ import annotations
 
@@ -25,27 +30,19 @@ from src.main.ui.widths import (
 
 
 def console_like(char: str) -> int:
-    """The behaviour of this machine's CP936 console with a CJK font.
-
-    Computed without calling into rich or wcwidth: the real measurer asks the
-    console directly, and calling the libraries here would recurse through the
-    very overrides under test.
-    """
     if char in "\u00b7\u2014\u2026\u2019\u2192\u00b0\u00b1\u00d7":
         return 2
     if char.isascii():
         return 1
     if unicodedata.category(char).startswith("M"):
         return 0
-    if "\u0400" <= char <= "\u045f":  # Cyrillic
+    if "\u0400" <= char <= "\u045f":
         return 2
     return 2 if unicodedata.east_asian_width(char) in ("W", "F") else 1
 
 
-# Characters this console draws wider than rich and prompt_toolkit assume.
 CONSOLE_WIDER = "\u00b7\u2014\u2026\u2019\u2192\u00b0\u00b1\u00d7\u0416\u0451"
 
-# Cyrillic text used by the panel tests.
 RU_LONG = "\u0412\u044b\u0441\u043e\u043a\u043e\u043f\u0440\u043e\u0438\u0437\u0432\u043e\u0434\u0438\u0442\u0435\u043b\u044c\u043d\u043e\u0435"
 RU_PHRASE = RU_LONG + " \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435"
 
@@ -59,23 +56,16 @@ class WidthOracleTests(unittest.TestCase):
             return 2
 
         oracle = ConsoleWidthOracle(measurer)
-        # ASCII is never ambiguous, so it must not be measured.
         self.assertIsNone(oracle.width("A"))
         self.assertIsNone(oracle.width("~"))
-        # A combining mark renders joined to its base character, so measuring it
-        # in isolation would be meaningless.
         self.assertIsNone(oracle.width("\u0301"))
         self.assertEqual(measured, [])
 
-        # A non-ASCII, non-mark character is measured and memoized.
         self.assertEqual(oracle.width("\u00b7"), 2)
         self.assertEqual(oracle.width("\u00b7"), 2)
         self.assertEqual(measured, ["\u00b7"])
 
     def test_agrees_measures_on_demand_for_unseen_characters(self):
-        # Guards the fast-path bug: rich's ``_is_single_cell_widths`` returns
-        # ``len(text)``, so agreement must be decided by measuring, not by
-        # consulting the set of characters already known to differ.
         oracle = ConsoleWidthOracle(console_like)
         self.assertTrue(oracle.agrees("abc"))
         self.assertFalse(oracle.agrees("a\u00b7b"))
@@ -86,7 +76,6 @@ class WidthOracleTests(unittest.TestCase):
         self.assertEqual(oracle.text_width("ab"), 2)
         self.assertEqual(oracle.text_width("a\u00b7b"), 1 + 2 + 1)
         self.assertEqual(oracle.text_width("\u4f60\u597d"), 4)
-        # A combining mark adds nothing, as the libraries also assume.
         self.assertEqual(oracle.text_width("e\u0301"), 1)
 
     def test_oracle_without_measurer_defers_everything(self):
@@ -111,7 +100,6 @@ class WidthOracleTests(unittest.TestCase):
 
 
 class OverrideTests(unittest.TestCase):
-    """The overrides must move both libraries, and must be reversible."""
 
     def setUp(self):
         self.addCleanup(clear_width_overrides)
@@ -119,8 +107,6 @@ class OverrideTests(unittest.TestCase):
         self.oracle = ConsoleWidthOracle(console_like)
 
     def test_overrides_align_rich_and_prompt_toolkit(self):
-        # Before patching, the libraries must disagree with the console;
-        # otherwise this fixture would not be exercising the bug.
         for char in CONSOLE_WIDER:
             with self.subTest(char=char):
                 expected = console_like(char)
@@ -173,19 +159,12 @@ class OverrideTests(unittest.TestCase):
 
 
 class PanelAlignmentTests(unittest.TestCase):
-    """The reported symptom: a translated panel's right border lands short."""
 
     def setUp(self):
         self.addCleanup(clear_width_overrides)
         clear_width_overrides()
 
     def border_columns(self, rendered: str) -> list[int]:
-        """Ground-truth column of each line's right edge.
-
-        Measured with the console model on purpose: using rich or display_width
-        would report agreement even when both are wrong in the same way. The
-        right edge is ``│`` on content lines and ``┐``/``┘`` on the corners.
-        """
         columns = []
         for raw in rendered.splitlines():
             fragments = to_formatted_text(ANSI(raw))
@@ -203,8 +182,6 @@ class PanelAlignmentTests(unittest.TestCase):
         return buffer.getvalue()
 
     def test_uncalibrated_panel_is_ragged(self):
-        # A multi-line panel: every line is padded to the widest, so a width
-        # model that disagrees with the console leaves the borders uneven.
         rendered = self.render_panel(f"{RU_LONG}\nshort")
         self.assertGreater(len(set(self.border_columns(rendered))), 1)
 
@@ -222,7 +199,6 @@ class PanelAlignmentTests(unittest.TestCase):
 
 
 class WelcomeRedrawTests(unittest.TestCase):
-    """Switching language must replace the panel, not stack a second one."""
 
     def setUp(self):
         self.addCleanup(clear_width_overrides)
@@ -244,7 +220,6 @@ class WelcomeRedrawTests(unittest.TestCase):
 
         rendered = render_welcome_text(runtime=self.runtime())
         self.assertIn("test-model", rendered)
-        # ESC[2J must not be relied on: prompt_toolkit's ANSI parser drops it.
         self.assertNotIn("\x1b[2J", rendered)
 
     def test_replace_output_discards_previous_content(self):
@@ -260,7 +235,6 @@ class WelcomeRedrawTests(unittest.TestCase):
         self.assertNotIn("old panel", ui.transcript)
 
     def test_language_change_replaces_instead_of_stacking(self):
-        """The whole chain: /lang -> callback -> transcript replaced once."""
         from types import SimpleNamespace
 
         from src.main.msg.command_utils import CommandManager
@@ -298,7 +272,6 @@ class WelcomeRedrawTests(unittest.TestCase):
         )
         manager.execute("/lang ru")
         self.assertEqual(language["code"], "ru")
-        # Exactly one panel: the old one was replaced, not stacked above it.
         self.assertEqual(
             ui.transcript.count("test-model"), 1, "welcome panel was stacked"
         )
@@ -353,7 +326,6 @@ class CalibrationEntryPointTests(unittest.TestCase):
         ):
             self.assertTrue(widths_module.calibrate_console_widths())
             self.assertEqual(cell_len("\u00b7"), 2)
-            # A second call is a no-op rather than a re-measure.
             self.assertTrue(widths_module.calibrate_console_widths())
 
     def test_calibration_declines_when_the_measurer_is_unusable(self):

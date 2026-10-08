@@ -1,11 +1,19 @@
-"""Offline index maintenance: python -m src.main.session rebuild-index."""
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import argparse
 
 from .local_store import LocalSessionStore
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description="Offline session index maintenance."
+    )
     parser.add_argument("command", choices=["rebuild-index"])
     parser.add_argument("--directory", default="session", help="Session storage directory")
     args = parser.parse_args()

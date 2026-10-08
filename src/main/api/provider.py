@@ -1,3 +1,10 @@
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 from collections.abc import Callable, Iterator
 from threading import Event, Lock
 from typing import Any, Protocol

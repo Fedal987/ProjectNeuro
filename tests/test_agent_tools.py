@@ -1,3 +1,10 @@
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import json
 import subprocess
 import tempfile
@@ -13,7 +20,6 @@ from src.main.tool.toolcall_utils import Agent as LegacyAgent
 
 class AgentToolsTests(unittest.TestCase):
     def setUp(self):
-        # self.workspace = Path(self.enterContext(tempfile.TemporaryDirectory()))
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)
         self.workspace = Path(temp_dir.name)

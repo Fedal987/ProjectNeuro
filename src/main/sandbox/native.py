@@ -1,3 +1,10 @@
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 from __future__ import annotations
 
 import os
@@ -8,7 +15,6 @@ from .base import CommandResult, execute
 
 
 def safe_environment() -> dict[str, str]:
-    """Allow only execution/locale settings, never arbitrary application secrets."""
     allowed = {"PATH", "LANG", "TERM"}
     if os.name == "nt":
         allowed.update({"SYSTEMROOT", "WINDIR", "PATHEXT"})
@@ -19,7 +25,6 @@ def safe_environment() -> dict[str, str]:
 
 
 class NativeRunner:
-    """Unrestricted execution for Full Control Mode."""
 
     def run(
         self, args: list[str], *, workspace: Path, timeout: int, writable: bool,
@@ -28,11 +33,6 @@ class NativeRunner:
 
 
 class FallbackRunner:
-    """Native compatibility fallback, NOT an OS security boundary.
-
-    HOME/TMP redirection and environment filtering are best effort only. Commands
-    can still access host files, network and processes, regardless of writable.
-    """
 
     def run(
         self, args: list[str], *, workspace: Path, timeout: int, writable: bool,

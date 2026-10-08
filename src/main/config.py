@@ -1,4 +1,10 @@
-"""Application settings. Importing this module never reads configuration files."""
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from math import isfinite
@@ -95,7 +101,6 @@ class AppConfig:
             api=APIConfig(
                 base_url=api["BASE_URL"], api_key=api["API_KEY"], model=api["MODEL"],
                 stream=api.get("STREAM", True),
-                # Preserve the spelling used by existing config.toml files.
                 temperature=api.get("TEMPERATURE", api.get("TEMPREATURE")),
                 protocol=api.get("PROTOCOL", "openai_compatible"),
                 provider=api.get("PROVIDER", "auto"),
@@ -112,7 +117,6 @@ class AppConfig:
 
 
 def load_config(path: str | Path | None = None) -> AppConfig:
-    """Read and validate at startup; an explicit path never falls back elsewhere."""
     if path is None:
         path = Path(__file__).resolve().parents[2] / "config.toml"
         if not path.is_file():

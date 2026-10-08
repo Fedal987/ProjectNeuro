@@ -1,3 +1,10 @@
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import codecs
 import subprocess
 import tempfile
@@ -21,7 +28,6 @@ from src.main.tools.base import ToolError
 
 class WindowsEncodingTests(unittest.TestCase):
     def setUp(self):
-        # self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)
         self.root = Path(temp_dir.name)

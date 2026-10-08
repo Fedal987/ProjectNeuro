@@ -1,8 +1,8 @@
 """
-    NeuroCode
+    ProjectNeuro
     author@Fedal987
     Powered by HeronStudio
-    GitHub: https://github.com/Fedal987/neurocode-py
+    GitHub: https://github.com/Fedal987/ProjectNeuro
 """
 
 from src.main.agent.agent import Agent
@@ -100,5 +100,4 @@ system prompt.
 
 
 def create_agent(system_prompt: str = SYSTEM_PROMPT, **kwargs) -> Agent:
-    """Create the shared tool-calling agent with the reasoning prompt."""
     return Agent(system_prompt=system_prompt, **kwargs)

@@ -1,8 +1,8 @@
 """
-    Neuro-cli
+    ProjectNeuro
     author@Fedal987
     Powered by HeronStudio
-    GitHub: https://github.com/Fedal987/neuro-cli-py
+    GitHub: https://github.com/Fedal987/ProjectNeuro
 """
 
 from src.main.agent.agent import Agent
@@ -106,5 +106,4 @@ USER INFORMATION
 
 
 def create_agent(system_prompt: str | None = None, **kwargs) -> Agent:
-    """Create the shared agent, gathering prompt context only when requested."""
     return Agent(system_prompt=system_prompt if system_prompt is not None else build_prompt(), **kwargs)

@@ -1,3 +1,10 @@
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,7 +14,6 @@ from src.main.session import LocalSessionStore, SessionEvent
 
 class SessionDiagnosticsTests(unittest.TestCase):
     def setUp(self):
-        # self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)
         self.root = Path(temp_dir.name)

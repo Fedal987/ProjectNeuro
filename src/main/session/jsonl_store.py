@@ -1,4 +1,10 @@
-"""Durable JSONL operations. The caller holds the store's writer lock."""
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import json
 import os
 from dataclasses import asdict
@@ -22,7 +28,6 @@ class JsonlEventStore:
 
     def sync_directory(self, directory: Path | None = None):
         if os.name == "nt":
-            # Windows does not expose directory fsync through os.open.
             return
         fd = os.open(directory or self.directory, os.O_RDONLY)
         try:
@@ -31,7 +36,6 @@ class JsonlEventStore:
             os.close(fd)
 
     def append(self, event: SessionEvent, *, create: bool = False) -> tuple[int, int]:
-        # Serialize before opening: an invalid payload must not create an empty file.
         data = (json.dumps(asdict(event), ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
         path = self.path(event.session_id)
         with path.open("xb" if create else "ab") as stream:
@@ -54,7 +58,6 @@ class JsonlEventStore:
             stream.seek(size - 1)
             if stream.read(1) == b"\n":
                 return
-            # Only an unterminated final line is uncommitted. Never skip middle corruption.
             end = size
             cut = 0
             while end:

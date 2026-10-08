@@ -1,4 +1,10 @@
-"""Explicit API runtime initialization; importing this module performs no I/O."""
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 from dataclasses import dataclass, field
 
 from src.main.api.factory import create_provider
@@ -33,7 +39,6 @@ _default_runtime: APIRuntime | None = None
 
 def create_runtime(config: AppConfig, *, provider: ModelProvider | None = None,
                    usage_tracker: UsageTracker | None = None) -> APIRuntime:
-    """Create independent dependencies without reading files or changing defaults."""
     tracker = usage_tracker if usage_tracker is not None else UsageTracker()
     return APIRuntime(
         config,
@@ -43,7 +48,6 @@ def create_runtime(config: AppConfig, *, provider: ModelProvider | None = None,
 
 
 def initialize(config: AppConfig, *, provider: ModelProvider | None = None) -> APIRuntime:
-    """Install an explicitly configured default for callers using module helpers."""
     global _default_runtime
     if _default_runtime is not None:
         raise RuntimeError("API runtime is already initialized; close it before reinitializing")

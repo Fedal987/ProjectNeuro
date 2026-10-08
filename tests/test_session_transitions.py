@@ -1,3 +1,10 @@
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 import tempfile
 import threading
 import unittest
@@ -13,7 +20,6 @@ from src.main.ui.terminal_cli import build_bottom_toolbar
 
 class SessionTransitionTests(unittest.TestCase):
     def setUp(self):
-        # self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)
         self.root = Path(temp_dir.name)

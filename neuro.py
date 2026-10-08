@@ -1,8 +1,8 @@
 """
-    Neuro-cli
+    ProjectNeuro
     author@Fedal987
-    Powered by SigmaStudio
-    GitHub: https://github.com/Fedal987/neuro-cli
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
 """
 
 from src.main.ui.terminal_cli import main

@@ -1,3 +1,10 @@
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 from __future__ import annotations
 
 from pathlib import Path, PureWindowsPath
@@ -13,7 +20,6 @@ class ApprovalPolicy(BaseTool):
         if not arguments:
             return False
         command = arguments[0]
-        # A workspace executable must not inherit a trusted utility's policy.
         if Path(command).name != command or PureWindowsPath(command).name != command:
             return False
         if any(
@@ -51,9 +57,6 @@ class ApprovalPolicy(BaseTool):
                 for argument in arguments[1:]
             )
 
-        # sed scripts can execute commands (e) and write files (w), including
-        # scripts loaded with -f. uniq accepts a positional output file, and
-        # file can invoke external decompressors. These require explicit approval.
         if command in {"sed", "uniq", "file"}:
             return False
 

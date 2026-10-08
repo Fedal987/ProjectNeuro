@@ -1,3 +1,10 @@
+"""
+    ProjectNeuro
+    author@Fedal987
+    Powered by HeronStudio
+    GitHub: https://github.com/Fedal987/ProjectNeuro
+"""
+
 from __future__ import annotations
 
 import json
@@ -54,7 +61,6 @@ def normalize_language(language: str | None) -> str:
 
 
 def detect_language() -> str:
-    """Choose a supported UI language without changing the process locale."""
     override = resolve_language(os.environ.get("NEURO_LANG"))
     if override:
         return override
@@ -74,7 +80,6 @@ def detect_language() -> str:
     if message_locale:
         return normalize_language(message_locale)
 
-    # LC_MESSAGES is unavailable on some platforms (notably Windows).
     for category in dict.fromkeys((getattr(locale, "LC_MESSAGES", locale.LC_CTYPE), locale.LC_CTYPE)):
         try:
             system_language, _encoding = locale.getlocale(category)
